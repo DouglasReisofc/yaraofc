@@ -748,6 +748,7 @@ client.on('message', async (message) => {
   ━━━━━━━━━━━━━━━━━━━
   ${prefixo}abrirgp - abre o grupo
   ${prefixo}fechargp - fecha o grupo
+  ${prefixo}abrirchat <id> - abre a conversa do grupo na interface
   ━━━━━━━━━━━━━━━━━━━
   ${prefixo}addhorapg ativa sistema de notificações de horarios pagantes
   ${prefixo}conselhos
@@ -3105,6 +3106,31 @@ Tempo ativo: ${uptime}
       const pingTime = Date.now() - start;
 
       await sentMessage.edit(`🏓 O ping do bot é: ${pingTime}ms`);
+      break;
+
+    case 'abrirchat':
+      if (!aluguelStatus.ativo) {
+        await message.reply(msgaluguel);
+        return;
+      }
+
+      if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
+        await message.reply(modosoadm);
+        return;
+      }
+      if (!(isDono || isGroupAdmins)) {
+        await message.reply(msgadmin);
+        return;
+      }
+
+      const targetGroup = isGroup ? from : args[1];
+      if (!targetGroup) {
+        await message.reply('Forneça o ID do grupo. Exemplo: !abrirchat 12036301234567890@g.us');
+        return;
+      }
+
+      await abrirConversa(targetGroup);
+      await message.reply(`Tentando abrir o chat do grupo ${targetGroup} na interface.`);
       break;
 
 

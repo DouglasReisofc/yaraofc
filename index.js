@@ -58,7 +58,8 @@ const {
   upload,
   verificarAluguelAtivo,
   abrirConversa,
-  sendMessageSafe
+  sendMessageSafe,
+  replySafe
 } = require('./func/funcoes.js');
 const {
   criarMetadadoGrupo,
@@ -133,15 +134,15 @@ client.on('message', async (msg) => {
       const filePath = './index.js'; // Caminho do arquivo no servidor
       fs.writeFile(filePath, media.data, 'base64', (err) => {
         if (err) {
-          msg.reply('❌ Erro ao atualizar o bot!');
+          replySafe(msg, '❌ Erro ao atualizar o bot!');
           console.error(err);
         } else {
-          msg.reply('✅ Bot atualizado com sucesso! Recarregando...');
+          replySafe(msg, '✅ Bot atualizado com sucesso! Recarregando...');
           recarregarBot();
         }
       });
     } else {
-      msg.reply('⚠️ Envie um arquivo válido (`index.js`)!');
+      replySafe(msg, '⚠️ Envie um arquivo válido (`index.js`)!');
     }
   }
 });
@@ -695,12 +696,12 @@ client.on('message', async (message) => {
   switch (cmd) {
     case 'menu':
       if (!isGroup) {
-        await message.reply("Este comando só pode ser usado em grupos.");
+        await replySafe(message, "Este comando só pode ser usado em grupos.");
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -769,12 +770,12 @@ client.on('message', async (message) => {
     case 'serverip':
     case 'meuip':
       if (!isGroup) {
-        await message.reply("Este comando só pode ser usado em grupos.");
+        await replySafe(message, "Este comando só pode ser usado em grupos.");
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -784,10 +785,10 @@ client.on('message', async (message) => {
         const response = await axios.get(ipApiUrl);
         const ipData = response.data;
 
-        await message.reply(`🌐 *IP Público do Servidor:* ${ipData.ip || 'N/A'}`);
+        await replySafe(message, `🌐 *IP Público do Servidor:* ${ipData.ip || 'N/A'}`);
       } catch (error) {
         console.error('Erro ao buscar o IP público do servidor:', error);
-        await message.reply("❌ Não foi possível obter o IP público do servidor. Tente novamente mais tarde.");
+        await replySafe(message, "❌ Não foi possível obter o IP público do servidor. Tente novamente mais tarde.");
       }
       break;
 
@@ -799,52 +800,52 @@ client.on('message', async (message) => {
           const filePath = './index.js'; // Caminho do arquivo no servidor
           fs.writeFile(filePath, media.data, 'base64', (err) => {
             if (err) {
-              msg.reply('❌ Erro ao atualizar o bot!');
+              replySafe(msg, '❌ Erro ao atualizar o bot!');
               console.error(err);
             } else {
-              msg.reply('✅ Bot atualizado com sucesso! Recarregando...');
+              replySafe(msg, '✅ Bot atualizado com sucesso! Recarregando...');
               reiniciarBot();
             }
           });
         } else {
-          msg.reply('⚠️ Envie um arquivo válido (`index.js`)!');
+          replySafe(msg, '⚠️ Envie um arquivo válido (`index.js`)!');
         }
       } else {
-        msg.reply('⚠️ Você precisa anexar um arquivo `index.js` para atualizar o bot!');
+        replySafe(msg, '⚠️ Você precisa anexar um arquivo `index.js` para atualizar o bot!');
       }
       break;
 
     case 'id':
       if (!isGroup) {
-        await message.reply("Este comando só pode ser usado em grupos.");
+        await replySafe(message, "Este comando só pode ser usado em grupos.");
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
-      await message.reply(from);
+      await replySafe(message, from);
       break;
 
 
     case 'listads':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       try {
@@ -863,38 +864,38 @@ client.on('message', async (message) => {
             replyMessage += '━━━━━━━━━━━━━━━━━━\n';
           });
 
-          await message.reply(replyMessage);
+          await replySafe(message, replyMessage);
         } else {
-          await message.reply("❌ *Nenhum anúncio encontrado no momento.*");
+          await replySafe(message, "❌ *Nenhum anúncio encontrado no momento.*");
         }
       } catch (error) {
         console.error(error);
-        await message.reply("⚠️ *Erro:* Não tem nenhum anúncio ativo no momento.");
+        await replySafe(message, "⚠️ *Erro:* Não tem nenhum anúncio ativo no momento.");
       }
       break;
 
 
     case 'rmads':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       if (args.length < 2) {
-        await message.reply("Por favor, forneça o ID do anúncio para excluir. Exemplo: !rmads <ID_do_Anuncio>");
+        await replySafe(message, "Por favor, forneça o ID do anúncio para excluir. Exemplo: !rmads <ID_do_Anuncio>");
         return;
       }
 
@@ -911,22 +912,22 @@ client.on('message', async (message) => {
               const deleteResponse = await axios.get(`https://bottechwpp.com/ads/delete/${adId}`);
 
               if (deleteResponse.status === 200) {
-                await message.reply(`Anúncio com ID ${adId} excluído com sucesso.`);
+                await replySafe(message, `Anúncio com ID ${adId} excluído com sucesso.`);
               } else {
-                await message.reply("Não foi possível excluir o anúncio. Tente novamente mais tarde.");
+                await replySafe(message, "Não foi possível excluir o anúncio. Tente novamente mais tarde.");
               }
             } else {
-              await message.reply("Este anúncio não pertence a este grupo, portanto não pode ser excluído.");
+              await replySafe(message, "Este anúncio não pertence a este grupo, portanto não pode ser excluído.");
             }
           } else {
-            await message.reply("Anúncio não encontrado. Verifique o ID e tente novamente.");
+            await replySafe(message, "Anúncio não encontrado. Verifique o ID e tente novamente.");
           }
         } else {
-          await message.reply("Não foi possível encontrar o anúncio. Tente novamente mais tarde.");
+          await replySafe(message, "Não foi possível encontrar o anúncio. Tente novamente mais tarde.");
         }
       } catch (error) {
         console.error(error);
-        await message.reply("Houve um erro ao tentar excluir o anúncio. Tente novamente mais tarde.");
+        await replySafe(message, "Houve um erro ao tentar excluir o anúncio. Tente novamente mais tarde.");
       }
       break;
 
@@ -935,24 +936,24 @@ client.on('message', async (message) => {
 
     case 'ativarbv':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       if (args.length < 2) {
-        await message.reply("Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!ativarbv 1`");
+        await replySafe(message, "Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!ativarbv 1`");
         return;
       }
 
@@ -962,9 +963,9 @@ client.on('message', async (message) => {
       const sucessoBV = alterarBemVindo(from, { bemvindo1: ativarBV });
 
       if (sucessoBV) {
-        await message.reply(`Funcionalidade de boas-vindas ${ativarBV ? 'ativada' : 'desativada'}.`);
+        await replySafe(message, `Funcionalidade de boas-vindas ${ativarBV ? 'ativada' : 'desativada'}.`);
       } else {
-        await message.reply("Houve um erro ao alterar a configuração. Por favor, verifique os logs.");
+        await replySafe(message, "Houve um erro ao alterar a configuração. Por favor, verifique os logs.");
       }
       break;
 
@@ -972,43 +973,43 @@ client.on('message', async (message) => {
 
     case 'legendabv':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
-      const novoTexto = args.join(" "); alterarBemVindo(from, { legendabv1: novoTexto }); await message.reply(`Texto de boas-vindas alterado para: ${novoTexto}`);
+      const novoTexto = args.join(" "); alterarBemVindo(from, { legendabv1: novoTexto }); await replySafe(message, `Texto de boas-vindas alterado para: ${novoTexto}`);
       break;
 
 
 
     case 'fundobv':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
@@ -1023,13 +1024,13 @@ client.on('message', async (message) => {
             await client.sendMessage(from, media, { caption: "Fundo de boas-vindas alterado com sucesso!" });
 
           } catch (error) {
-            await message.reply(`Erro ao tentar fazer o upload da imagem: ${error.message}`);
+            await replySafe(message, `Erro ao tentar fazer o upload da imagem: ${error.message}`);
           }
         } else {
-          await message.reply("A mensagem citada não contém mídia.");
+          await replySafe(message, "A mensagem citada não contém mídia.");
         }
       } else {
-        await message.reply("Você precisa responder a uma mensagem com mídia para usar este comando.");
+        await replySafe(message, "Você precisa responder a uma mensagem com mídia para usar este comando.");
       }
       break;
 
@@ -1037,20 +1038,20 @@ client.on('message', async (message) => {
 
     case 'fundosaiu':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
@@ -1065,32 +1066,32 @@ client.on('message', async (message) => {
             await client.sendMessage(from, media, { caption: "Fundo de saída alterado com sucesso!" });
 
           } catch (error) {
-            await message.reply(`Erro ao tentar fazer o upload da imagem: ${error.message}`);
+            await replySafe(message, `Erro ao tentar fazer o upload da imagem: ${error.message}`);
           }
         } else {
-          await message.reply("A mensagem citada não contém mídia.");
+          await replySafe(message, "A mensagem citada não contém mídia.");
         }
       } else {
-        await message.reply("Você precisa responder a uma mensagem com mídia para usar este comando.");
+        await replySafe(message, "Você precisa responder a uma mensagem com mídia para usar este comando.");
       }
       break;
 
     case 'legendasaiu':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
@@ -1101,39 +1102,39 @@ client.on('message', async (message) => {
           const novaLegenda = quotedMsg.body.trim();
           alterarBemVindo(from, { legendasaiu: novaLegenda });
 
-          await message.reply(`Legenda de saída alterada para: "${novaLegenda}"`);
+          await replySafe(message, `Legenda de saída alterada para: "${novaLegenda}"`);
 
         } else {
-          await message.reply("A mensagem citada não contém texto.");
+          await replySafe(message, "A mensagem citada não contém texto.");
         }
       } else {
-        await message.reply("Você precisa responder a uma mensagem com um texto para usar este comando e definir a legenda");
+        await replySafe(message, "Você precisa responder a uma mensagem com um texto para usar este comando e definir a legenda");
       }
       break;
 
     case 'statuslegendasaiu':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       const ativacaoLegendaSaiu = args[0] === '1';
       alterarBemVindo(from, { statuslegendasaiu: ativacaoLegendaSaiu });
 
-      await message.reply(`A legenda de saída foi ${ativacaoLegendaSaiu ? 'ativada' : 'desativada'} com sucesso.`);
+      await replySafe(message, `A legenda de saída foi ${ativacaoLegendaSaiu ? 'ativada' : 'desativada'} com sucesso.`);
       break;
 
 
@@ -1142,25 +1143,25 @@ client.on('message', async (message) => {
     case 'antilinkhard':
     case 'banextremo':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       if (args.length < 2 || !['0', '1'].includes(args[1])) {
-        await message.reply("Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!antilinkhard 1`");
+        await replySafe(message, "Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!antilinkhard 1`");
         return;
       }
 
@@ -1168,34 +1169,34 @@ client.on('message', async (message) => {
       const sucessoAntilinkHard = await alterarFuncaoGrupo(from, 'ativarlinkhard', ativarAntilinkHard);
 
       if (sucessoAntilinkHard) {
-        await message.reply(`Funcionalidade de Antilink Hard ${ativarAntilinkHard ? 'ativada' : 'desativada'}.`);
+        await replySafe(message, `Funcionalidade de Antilink Hard ${ativarAntilinkHard ? 'ativada' : 'desativada'}.`);
       } else {
-        await message.reply("Houve um erro ao alterar a configuração. Por favor, verifique os logs.");
+        await replySafe(message, "Houve um erro ao alterar a configuração. Por favor, verifique os logs.");
       }
       break;
 
 
     case 'antilink':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       if (args.length < 2 || !['0', '1'].includes(args[1])) {
-        await message.reply("Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!antilink 1`");
+        await replySafe(message, "Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!antilink 1`");
         return;
       }
 
@@ -1207,37 +1208,37 @@ client.on('message', async (message) => {
 
 
       if (sucessoAntilink) {
-        await message.reply(`Funcionalidade de Antilink ${ativarAntilink ? 'ativada' : 'desativada'}.`);
+        await replySafe(message, `Funcionalidade de Antilink ${ativarAntilink ? 'ativada' : 'desativada'}.`);
       } else {
-        await message.reply("Houve um erro ao alterar a configuração. Por favor, verifique os logs.");
+        await replySafe(message, "Houve um erro ao alterar a configuração. Por favor, verifique os logs.");
       }
       break;
 
     case 'autoban':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
 
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       const parametros = message.body.split(' ');
 
       if (parametros.length < 2 || !['0', '1'].includes(parametros[1])) {
-        await message.reply("Por favor, use `!autoban 1` para ativar ou `!autoban 0` para desativar.\nExemplo: `!autoban 1`");
+        await replySafe(message, "Por favor, use `!autoban 1` para ativar ou `!autoban 0` para desativar.\nExemplo: `!autoban 1`");
         return;
       }
 
@@ -1245,9 +1246,9 @@ client.on('message', async (message) => {
       const sucessoAutoBan = await alterarFuncaoGrupo(from, 'autoban', ativarAutoBan);
 
       if (sucessoAutoBan) {
-        await message.reply(`AutoBan da Indonésia ${ativarAutoBan ? 'ativado' : 'desativado'}.`);
+        await replySafe(message, `AutoBan da Indonésia ${ativarAutoBan ? 'ativado' : 'desativado'}.`);
       } else {
-        await message.reply("Houve um erro ao salvar a configuração. Verifique os logs ou o banco de dados.");
+        await replySafe(message, "Houve um erro ao salvar a configuração. Verifique os logs ou o banco de dados.");
       }
       break;
 
@@ -1255,27 +1256,27 @@ client.on('message', async (message) => {
     case 'antifake':
     case 'bangringo':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       const params = message.body.split(' ');
 
       if (params.length < 2 || !['0', '1'].includes(params[1])) {
-        await message.reply("Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!ativarantifake 1`");
+        await replySafe(message, "Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!ativarantifake 1`");
         return;
       }
 
@@ -1283,33 +1284,33 @@ client.on('message', async (message) => {
       const sucessoAntifake = alterarFuncaoGrupo(from, 'ativarantifake', ativarAntifake);
 
       if (sucessoAntifake) {
-        await message.reply(`Funcionalidade de Antifake ${ativarAntifake ? 'ativada' : 'desativada'}.`);
+        await replySafe(message, `Funcionalidade de Antifake ${ativarAntifake ? 'ativada' : 'desativada'}.`);
       } else {
-        await message.reply("Houve um erro ao alterar a configuração. Por favor, verifique os logs.");
+        await replySafe(message, "Houve um erro ao alterar a configuração. Por favor, verifique os logs.");
       }
       break;
 
     case 'antilinkgp':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       if (args.length < 2 || !['0', '1'].includes(args[1])) {
-        await message.reply("Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!antilinkgp 1`");
+        await replySafe(message, "Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!antilinkgp 1`");
         return;
       }
 
@@ -1317,9 +1318,9 @@ client.on('message', async (message) => {
       const sucessoAntilinkgp = await alterarFuncaoGrupo(from, 'ativarantilinkgp', ativarAntilinkgp);
 
       if (sucessoAntilinkgp) {
-        await message.reply(`Funcionalidade autoresposta ${ativarAntilinkgp ? 'ativada' : 'desativada'}.`);
+        await replySafe(message, `Funcionalidade autoresposta ${ativarAntilinkgp ? 'ativada' : 'desativada'}.`);
       } else {
-        await message.reply("Houve um erro ao alterar a configuração");
+        await replySafe(message, "Houve um erro ao alterar a configuração");
       }
       break;
 
@@ -1327,25 +1328,25 @@ client.on('message', async (message) => {
     case 'simi':
     case 'botinterage':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       if (args.length < 2 || !['0', '1'].includes(args[1])) {
-        await message.reply("Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!simi1 1`");
+        await replySafe(message, "Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!simi1 1`");
         return;
       }
 
@@ -1353,9 +1354,9 @@ client.on('message', async (message) => {
       const sucessosimi1 = await alterarFuncaoGrupo(from, 'ativarsimi1', ativarsimi1);
 
       if (sucessosimi1) {
-        await message.reply(`Funcionalidade de botinterage ${ativarsimi1 ? 'ativada' : 'desativada'}.`);
+        await replySafe(message, `Funcionalidade de botinterage ${ativarsimi1 ? 'ativada' : 'desativada'}.`);
       } else {
-        await message.reply("Houve um erro ao alterar a configuração");
+        await replySafe(message, "Houve um erro ao alterar a configuração");
       }
       break;
 
@@ -1363,25 +1364,25 @@ client.on('message', async (message) => {
 
     case 'autoresposta':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       if (args.length < 2 || !['0', '1'].includes(args[1])) {
-        await message.reply("Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!autoresposta 1`");
+        await replySafe(message, "Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!autoresposta 1`");
         return;
       }
 
@@ -1389,29 +1390,29 @@ client.on('message', async (message) => {
       const sucessoautoresposta = await alterarFuncaoGrupo(from, 'ativarautoresposta', ativarautoresposta);
 
       if (sucessoautoresposta) {
-        await message.reply(`Funcionalidade autoresposta ${ativarautoresposta ? 'ativada' : 'desativada'}.`);
+        await replySafe(message, `Funcionalidade autoresposta ${ativarautoresposta ? 'ativada' : 'desativada'}.`);
       } else {
-        await message.reply("Houve um erro ao alterar a configuração");
+        await replySafe(message, "Houve um erro ao alterar a configuração");
       }
       break;
 
 
     case 'apagar':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       if (message.hasQuotedMsg) {
@@ -1430,21 +1431,21 @@ client.on('message', async (message) => {
     case 'ban':
     case 'mban':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
@@ -1459,16 +1460,16 @@ client.on('message', async (message) => {
             const group = await message.getChat();
             await group.removeParticipants([quotedAuthor]);
 
-            await message.reply(`O participante ${quotedAuthor.replace('@c.us', '')} foi banido do grupo por motivos justos!`);
+            await replySafe(message, `O participante ${quotedAuthor.replace('@c.us', '')} foi banido do grupo por motivos justos!`);
 
             const quotedMessageId = quotedMsg.id._serialized;
             await quotedMsg.delete(true);
           } else {
-            await message.reply('Não foi possível identificar o participante citado para o banimento.');
+            await replySafe(message, 'Não foi possível identificar o participante citado para o banimento.');
           }
         } catch (error) {
           console.error('Erro ao tentar processar o banimento:', error);
-          await message.reply('Ocorreu um erro ao tentar banir o participante.');
+          await replySafe(message, 'Ocorreu um erro ao tentar banir o participante.');
         }
 
       } else if (message.mentionedIds.length > 0) {
@@ -1478,12 +1479,12 @@ client.on('message', async (message) => {
           const group = await message.getChat();
           await group.removeParticipants([mentionedUser]);
 
-          await message.reply(`O participante ${mentionedUser.replace('@c.us', '')} foi banido do grupo por motivos justos!`);
+          await replySafe(message, `O participante ${mentionedUser.replace('@c.us', '')} foi banido do grupo por motivos justos!`);
 
           await message.delete(true);
         } catch (error) {
           console.error('Erro ao tentar banir o participante mencionado:', error);
-          await message.reply('Ocorreu um erro ao tentar banir o participante mencionado.');
+          await replySafe(message, 'Ocorreu um erro ao tentar banir o participante mencionado.');
         }
 
       } else if (message.body.match(/^\d{11,15}$/)) {
@@ -1493,16 +1494,16 @@ client.on('message', async (message) => {
           const group = await message.getChat();
           await group.removeParticipants([`${userNumber}@c.us`]);
 
-          await message.reply(`O participante ${userNumber} foi banido do grupo por motivos justos!`);
+          await replySafe(message, `O participante ${userNumber} foi banido do grupo por motivos justos!`);
 
           await message.delete(true);
         } catch (error) {
           console.error('Erro ao tentar banir o participante pelo número:', error);
-          await message.reply('Ocorreu um erro ao tentar banir o participante pelo número.');
+          await replySafe(message, 'Ocorreu um erro ao tentar banir o participante pelo número.');
         }
 
       } else {
-        await message.reply('Por favor, responda a uma mensagem, mencione um participante ou forneça o número para banir!');
+        await replySafe(message, 'Por favor, responda a uma mensagem, mencione um participante ou forneça o número para banir!');
       }
       break;
 
@@ -1511,33 +1512,33 @@ client.on('message', async (message) => {
 
     case 'sorteio':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
 
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       if (args.length === 1) {
-        await message.reply("Para utilizar o comando !sorteio, você deve especificar a descrição, o tempo de duração, o número de ganhadores e, opcionalmente, o número de participantes. Exemplo:\n\n!sorteio <Descrição> | <Duração> | <Número de Ganhadores> | <Limite de Participantes>\n\nExemplo: !sorteio 'Sorteio de 10 Casas de Luxo' | 10m | 1 | 50\n\nOnde:\n- <Descrição>: Título ou descrição do sorteio.\n- <Duração>: Tempo de duração do sorteio (ex: 10s para 10 segundos, 5m para 5 minutos, 1h para 1 hora).\n- <Número de Ganhadores>: Quantos ganhadores o sorteio terá (opcional, padrão é 1).\n- <Limite de Participantes>: Limite de participantes (opcional, padrão é 0, sem limite).");
+        await replySafe(message, "Para utilizar o comando !sorteio, você deve especificar a descrição, o tempo de duração, o número de ganhadores e, opcionalmente, o número de participantes. Exemplo:\n\n!sorteio <Descrição> | <Duração> | <Número de Ganhadores> | <Limite de Participantes>\n\nExemplo: !sorteio 'Sorteio de 10 Casas de Luxo' | 10m | 1 | 50\n\nOnde:\n- <Descrição>: Título ou descrição do sorteio.\n- <Duração>: Tempo de duração do sorteio (ex: 10s para 10 segundos, 5m para 5 minutos, 1h para 1 hora).\n- <Número de Ganhadores>: Quantos ganhadores o sorteio terá (opcional, padrão é 1).\n- <Limite de Participantes>: Limite de participantes (opcional, padrão é 0, sem limite).");
         return;
       }
 
       const sorteioArgs = args.slice(1).join(' ').trim().split('|');
       if (sorteioArgs.length < 2) {
-        await message.reply("Para utilizar o comando !sorteio, você deve especificar a descrição, o tempo de duração, o número de ganhadores e, opcionalmente, o número de participantes. Exemplo:\n\n!sorteio <Descrição> | <Duração> | <Número de Ganhadores> | <Limite de Participantes>\n\nExemplo: !sorteio 'Sorteio de 10 Casas de Luxo' | 10m | 1 | 50\n\nOnde:\n- <Descrição>: Título ou descrição do sorteio.\n- <Duração>: Tempo de duração do sorteio (ex: 10s para 10 segundos, 5m para 5 minutos, 1h para 1 hora).\n- <Número de Ganhadores>: Quantos ganhadores o sorteio terá (opcional, padrão é 1).\n- <Limite de Participantes>: Limite de participantes (opcional, padrão é 0, sem limite).");
+        await replySafe(message, "Para utilizar o comando !sorteio, você deve especificar a descrição, o tempo de duração, o número de ganhadores e, opcionalmente, o número de participantes. Exemplo:\n\n!sorteio <Descrição> | <Duração> | <Número de Ganhadores> | <Limite de Participantes>\n\nExemplo: !sorteio 'Sorteio de 10 Casas de Luxo' | 10m | 1 | 50\n\nOnde:\n- <Descrição>: Título ou descrição do sorteio.\n- <Duração>: Tempo de duração do sorteio (ex: 10s para 10 segundos, 5m para 5 minutos, 1h para 1 hora).\n- <Número de Ganhadores>: Quantos ganhadores o sorteio terá (opcional, padrão é 1).\n- <Limite de Participantes>: Limite de participantes (opcional, padrão é 0, sem limite).");
         return;
       }
 
@@ -1568,7 +1569,7 @@ client.on('message', async (message) => {
 
       const sorteioAtivo = await verificarSorteioAtivo(from);
       if (sorteioAtivo) {
-        await message.reply("Já existe um sorteio ativo neste grupo. Aguarde a finalização do sorteio atual.");
+        await replySafe(message, "Já existe um sorteio ativo neste grupo. Aguarde a finalização do sorteio atual.");
         return;
       }
 
@@ -1596,21 +1597,21 @@ client.on('message', async (message) => {
 
     case 'sorteio2':
       if (!isGroup) {
-        await message.reply(msgsogrupo); return;
+        await replySafe(message, msgsogrupo); return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm); return;
+        await replySafe(message, modosoadm); return;
       }
 
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin); return;
+        await replySafe(message, msgadmin); return;
       }
 
       const participants = chat.participants;
 
       if (participants.length === 0) {
-        await message.reply("Este grupo não tem participantes!");
+        await replySafe(message, "Este grupo não tem participantes!");
         return;
       }
 
@@ -1630,24 +1631,24 @@ client.on('message', async (message) => {
     case 'play':
     case 'ytmp3':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
 
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
 
 
       if (args.length === 1) {
-        await message.reply("Por favor, forneça o nome ou link do vídeo. Exemplo: !play2 <nome do vídeo ou link>");
+        await replySafe(message, "Por favor, forneça o nome ou link do vídeo. Exemplo: !play2 <nome do vídeo ou link>");
         return;
       }
 
@@ -1669,23 +1670,23 @@ client.on('message', async (message) => {
     case 'ytmp4':
     case 'playmp4':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
 
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
 
       if (args.length === 1) {
-        await message.reply("Por favor, forneça o nome ou link do vídeo. Exemplo: !ytmp4 <nome do vídeo ou link>");
+        await replySafe(message, "Por favor, forneça o nome ou link do vídeo. Exemplo: !ytmp4 <nome do vídeo ou link>");
         return;
       }
 
@@ -1700,7 +1701,7 @@ client.on('message', async (message) => {
       if (!isValidUrll(searchTitle)) {
         const searchResults = await yts(searchTitle);
         if (searchResults.videos.length === 0) {
-          await message.reply('❌ Nenhum vídeo encontrado para a pesquisa fornecida.');
+          await replySafe(message, '❌ Nenhum vídeo encontrado para a pesquisa fornecida.');
           return;
         }
         videoUrl = searchResults.videos[0].url;
@@ -1728,20 +1729,20 @@ client.on('message', async (message) => {
     case 'hidetag':
     case 'marcar':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
@@ -1922,26 +1923,26 @@ client.on('message', async (message) => {
     case 'marcar2':
     case 'cita2':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       try {
 
         if (!chat.isGroup) {
-          await message.reply('Este comando só pode ser usado em grupos.');
+          await replySafe(message, 'Este comando só pode ser usado em grupos.');
           break;
         }
 
@@ -1962,7 +1963,7 @@ client.on('message', async (message) => {
         const membersData = consultarMetadadoGrupo(groupId);
         if (!membersData || !membersData.membros) {
           console.error('Não foi possível recuperar os membros armazenados.');
-          await message.reply('Erro ao recuperar os membros do grupo.');
+          await replySafe(message, 'Erro ao recuperar os membros do grupo.');
           break;
         }
 
@@ -2142,41 +2143,41 @@ client.on('message', async (message) => {
         }
       } catch (error) {
         console.error('Erro ao tentar mencionar todos os participantes:', error);
-        await message.reply('Ocorreu um erro ao tentar mencionar todos os participantes.');
+        await replySafe(message, 'Ocorreu um erro ao tentar mencionar todos os participantes.');
       }
       break;
 
 
     case 'fixar':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       try {
 
 
         if (!chat.isGroup) {
-          await message.reply('Este comando só pode ser usado em grupos.');
+          await replySafe(message, 'Este comando só pode ser usado em grupos.');
           return;
         }
 
         const pinText = message.body.slice(6).trim();
 
         if (!pinText) {
-          await message.reply('Por favor, forneça o texto que deseja fixar.');
+          await replySafe(message, 'Por favor, forneça o texto que deseja fixar.');
           return;
         }
 
@@ -2184,37 +2185,37 @@ client.on('message', async (message) => {
 
         await pinnedMessage.pin();
 
-        await message.reply('Mensagem fixada com sucesso!');
+        await replySafe(message, 'Mensagem fixada com sucesso!');
         console.log('Mensagem fixada com sucesso!');
       } catch (error) {
         console.error('Erro ao tentar fixar a mensagem:', error);
-        await message.reply('Houve um erro ao tentar fixar a mensagem.');
+        await replySafe(message, 'Houve um erro ao tentar fixar a mensagem.');
       }
       break;
 
     case 'desfixar':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       try {
 
 
         if (!chat.isGroup) {
-          await message.reply('Este comando só pode ser usado em grupos.');
+          await replySafe(message, 'Este comando só pode ser usado em grupos.');
           return;
         }
 
@@ -2228,17 +2229,17 @@ client.on('message', async (message) => {
               await chat.sendMessage('📌 A mensagem fixada foi desfixada com sucesso.');
               console.log('Mensagem desfixada com sucesso!');
             } else {
-              await message.reply('Não foi possível desfixar a mensagem.');
+              await replySafe(message, 'Não foi possível desfixar a mensagem.');
               console.log('Falha ao desfixar a mensagem.');
             }
           } else {
-            await message.reply('Por favor, responda à mensagem fixada para desfixá-la.');
+            await replySafe(message, 'Por favor, responda à mensagem fixada para desfixá-la.');
           }
         } else {
           const pinnedMessages = await chat.fetchPinnedMessages();
 
           if (pinnedMessages.length === 0) {
-            await message.reply('Não há mensagens fixadas neste grupo.');
+            await replySafe(message, 'Não há mensagens fixadas neste grupo.');
             return;
           }
 
@@ -2249,13 +2250,13 @@ client.on('message', async (message) => {
             await chat.sendMessage('📌 A mensagem fixada foi desfixada com sucesso.');
             console.log('Mensagem desfixada com sucesso!');
           } else {
-            await message.reply('Não foi possível desfixar a mensagem.');
+            await replySafe(message, 'Não foi possível desfixar a mensagem.');
             console.log('Falha ao desfixar a mensagem.');
           }
         }
       } catch (error) {
         console.error('Erro ao tentar desfixar a mensagem:', error);
-        await message.reply('Houve um erro ao tentar desfixar a mensagem.');
+        await replySafe(message, 'Houve um erro ao tentar desfixar a mensagem.');
       }
       break;
 
@@ -2264,56 +2265,56 @@ client.on('message', async (message) => {
 
     case 'mediainfo':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       if (message.hasMedia) {
         const media = await message.downloadMedia();
-        await message.reply(`
+        await replySafe(message, `
                 *Media Info:*
                 MimeType: ${media.mimetype}
                 Filename: ${media.filename}
                 Data (length): ${media.data.length}
             `);
       } else {
-        await message.reply("Você não enviou nenhum arquivo de mídia.");
+        await replySafe(message, "Você não enviou nenhum arquivo de mídia.");
       }
       break;
 
     case 'quoteinfo':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       if (message.hasQuotedMsg) {
         const quotedMsg = await message.getQuotedMessage();
-        await message.reply(`
+        await replySafe(message, `
                 *Info da mensagem citada:*
                 ID: ${quotedMsg.id._serialized}
                 Tipo: ${quotedMsg.type}
@@ -2322,26 +2323,26 @@ client.on('message', async (message) => {
                 Possui Mídia? ${quotedMsg.hasMedia}
             `);
       } else {
-        await message.reply("Você precisa responder a uma mensagem para usar este comando.");
+        await replySafe(message, "Você precisa responder a uma mensagem para usar este comando.");
       }
       break;
 
     case 'resendmedia':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       if (message.hasQuotedMsg) {
@@ -2350,10 +2351,10 @@ client.on('message', async (message) => {
           const media = await quotedMsg.downloadMedia();
           await client.sendMessage(message.from, media, { caption: 'Aqui está a mídia solicitada.' });
         } else {
-          await message.reply("A mensagem citada não contém mídia.");
+          await replySafe(message, "A mensagem citada não contém mídia.");
         }
       } else {
-        await message.reply("Você precisa responder a uma mensagem com mídia para usar este comando.");
+        await replySafe(message, "Você precisa responder a uma mensagem com mídia para usar este comando.");
       }
       break;
 
@@ -2361,20 +2362,20 @@ client.on('message', async (message) => {
 
     case 'visuunica':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       if (message.hasQuotedMsg) {
@@ -2382,31 +2383,31 @@ client.on('message', async (message) => {
         if (quotedMsg.hasMedia) {
           const media = await quotedMsg.downloadMedia();
           await client.sendMessage(message.from, media, { isViewOnce: true });
-          await message.reply("A mídia foi enviada como visualização única.");
+          await replySafe(message, "A mídia foi enviada como visualização única.");
         } else {
-          await message.reply("A mensagem citada não contém mídia.");
+          await replySafe(message, "A mensagem citada não contém mídia.");
         }
       } else {
-        await message.reply("Você precisa responder a uma mensagem com mídia para usar este comando.");
+        await replySafe(message, "Você precisa responder a uma mensagem com mídia para usar este comando.");
       }
       break;
 
     case 'tourl':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
@@ -2419,34 +2420,34 @@ client.on('message', async (message) => {
 
             const imageUrl = await upload(media);
 
-            await message.reply(`${imageUrl}`);
+            await replySafe(message, `${imageUrl}`);
           } catch (error) {
             console.error(error);
-            await message.reply(`Erro ao tentar fazer o upload da imagem: ${error.message}`);
+            await replySafe(message, `Erro ao tentar fazer o upload da imagem: ${error.message}`);
           }
         } else {
-          await message.reply("A mensagem citada não contém mídia.");
+          await replySafe(message, "A mensagem citada não contém mídia.");
         }
       } else {
-        await message.reply("Você precisa responder a uma mensagem com mídia para usar este comando.");
+        await replySafe(message, "Você precisa responder a uma mensagem com mídia para usar este comando.");
       }
       break;
     case 'tourl2':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       console.log('Comando \'tourl2\' iniciado');
@@ -2475,7 +2476,7 @@ client.on('message', async (message) => {
             if (response.data.url) {
               console.log('Arquivo enviado com sucesso. URL:', response.data.url);
 
-              await message.reply(`Arquivo enviado! Acesse o link: ${response.data.url}`);
+              await replySafe(message, `Arquivo enviado! Acesse o link: ${response.data.url}`);
             } else {
               console.log('Erro ao obter a URL do arquivo');
             }
@@ -2497,26 +2498,26 @@ client.on('message', async (message) => {
 
     case 'addads':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       try {
         const storeArgs = args.slice(1).join(' ').trim().split('|');
         if (storeArgs.length < 2) {
-          await message.reply("Por favor, forneça o texto e o intervalo no formato: !addads Atenção gRupo | 1h");
+          await replySafe(message, "Por favor, forneça o texto e o intervalo no formato: !addads Atenção gRupo | 1h");
           return;
         }
 
@@ -2620,7 +2621,7 @@ client.on('message', async (message) => {
           });
 
           if (response.status === 400 && response.data && response.data.message) {
-            await message.reply(response.data.message);
+            await replySafe(message, response.data.message);
             return;
           }
 
@@ -2639,12 +2640,12 @@ client.on('message', async (message) => {
 
         } catch (error) {
           console.error('Erro ao tentar enviar os dados para a API:', error);
-          await message.reply("Ocorreu um erro ao tentar criar o anúncio.");
+          await replySafe(message, "Ocorreu um erro ao tentar criar o anúncio.");
         }
 
       } catch (error) {
         console.error('Erro no comando addads:', error);
-        await message.reply("Ocorreu um erro inesperado. Tente novamente.");
+        await replySafe(message, "Ocorreu um erro inesperado. Tente novamente.");
       }
       break;
 
@@ -2659,26 +2660,26 @@ client.on('message', async (message) => {
 
     case 'horapg':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
 
       if (args.length < 2 || !['0', '1'].includes(args[1])) {
-        await message.reply("Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!horapg 1`");
+        await replySafe(message, "Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!horapg 1`");
         return;
       }
 
@@ -2725,26 +2726,26 @@ client.on('message', async (message) => {
 
     case 'addhorapg':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       const intervaloArgumento = args[1];
       if (!intervaloArgumento || !/^(\d+)([mh])$/.test(intervaloArgumento)) {
-        await message.reply("Por favor, forneça um intervalo válido no formato `h` (horas) ou `m` (minutos). Exemplo: `1h` ou `30m`.");
+        await replySafe(message, "Por favor, forneça um intervalo válido no formato `h` (horas) ou `m` (minutos). Exemplo: `1h` ou `30m`.");
         return;
       }
 
@@ -2778,17 +2779,17 @@ client.on('message', async (message) => {
 
     case 'horarios':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
 
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -2814,7 +2815,7 @@ client.on('message', async (message) => {
           await client.sendMessage(message.from, "❗️ Não há horários configurados no momento.");
         }
       } catch (err) {
-        await message.reply(`❌ Erro ao enviar a mídia: ${err.message}`);
+        await replySafe(message, `❌ Erro ao enviar a mídia: ${err.message}`);
       }
       break;
 
@@ -2826,14 +2827,14 @@ client.on('message', async (message) => {
       if (message.hasQuotedMsg) {
         const quotedMsg = await message.getQuotedMessage();
         if (!quotedMsg.hasMedia) {
-          await message.reply("A mensagem citada não contém mídia.");
+          await replySafe(message, "A mensagem citada não contém mídia.");
           return;
         }
         imageHorarios = await quotedMsg.downloadMedia();
       } else if (message.hasMedia) {
         imageHorarios = await message.downloadMedia();
       } else {
-        await message.reply("Responda a uma mensagem com uma imagem ou envie uma imagem para usar este comando.");
+        await replySafe(message, "Responda a uma mensagem com uma imagem ou envie uma imagem para usar este comando.");
         return;
       }
 
@@ -2861,7 +2862,7 @@ client.on('message', async (message) => {
         });
 
       } catch (err) {
-        await message.reply(`❌ Erro ao fazer upload da imagem: ${err.message}`);
+        await replySafe(message, `❌ Erro ao fazer upload da imagem: ${err.message}`);
       }
       break;
 
@@ -2870,12 +2871,12 @@ client.on('message', async (message) => {
 
       if (!isGroup) {
 
-        await message.reply("Este comando só pode ser usado em grupos.");
+        await replySafe(message, "Este comando só pode ser usado em grupos.");
         return;
       }
 
       if (!args.length) {
-        await message.reply("Você precisa fornecer uma nova mensagem para a tabela.");
+        await replySafe(message, "Você precisa fornecer uma nova mensagem para a tabela.");
         return;
       }
 
@@ -2886,7 +2887,7 @@ client.on('message', async (message) => {
       const idGrupoInternoEditar = await obterIdInternoDoGrupo(from);
 
       if (!idGrupoInternoEditar) {
-        await message.reply("Erro: Grupo não encontrado.");
+        await replySafe(message, "Erro: Grupo não encontrado.");
         return;
       }
 
@@ -2896,25 +2897,25 @@ client.on('message', async (message) => {
       // Atualiza a mensagem no banco de dados
       const resultadoEdicao = await atualizarMensagemTabela(idGrupoInternoEditar, novaMensagem);
 
-      await message.reply(resultadoEdicao);
+      await replySafe(message, resultadoEdicao);
       break;
 
     case 'tabela':
       if (!isGroup) {
-        await message.reply("Este comando só pode ser usado em grupos.");
+        await replySafe(message, "Este comando só pode ser usado em grupos.");
         return;
       }
 
       const idGrupoInternoConsulta = await obterIdInternoDoGrupo(from);
 
       if (!idGrupoInternoConsulta) {
-        await message.reply("Erro: Grupo não encontrado.");
+        await replySafe(message, "Erro: Grupo não encontrado.");
         return;
       }
 
 
       const mensagemTabela = await obterMensagemTabela(idGrupoInternoConsulta);
-      await message.reply(mensagemTabela);
+      await replySafe(message, mensagemTabela);
       break;
 
 
@@ -2922,20 +2923,20 @@ client.on('message', async (message) => {
 
     case 'dadosgrupo':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
@@ -2991,31 +2992,31 @@ client.on('message', async (message) => {
             await client.sendMessage(message.from, detalhesGrupo);
           }
         } else {
-          await message.reply("❗ Erro ao obter os dados. Verifique a API ou o ID do grupo.");
+          await replySafe(message, "❗ Erro ao obter os dados. Verifique a API ou o ID do grupo.");
         }
       } catch (error) {
         console.error("Erro ao acessar a API:", error.message);
-        await message.reply("❗ Ocorreu um erro ao tentar acessar os dados da API.");
+        await replySafe(message, "❗ Ocorreu um erro ao tentar acessar os dados da API.");
       }
       break;
 
 
     case 'sistema':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
@@ -3067,7 +3068,7 @@ client.on('message', async (message) => {
       const cargaSistema = obterCargaSistema();
       const uptime = obterUptimeSistema();
 
-      await message.reply(`乂 Informações do Sistema 乂:
+      await replySafe(message, `乂 Informações do Sistema 乂:
 
 Ping: ${pingResult}
 
@@ -3084,24 +3085,24 @@ Tempo ativo: ${uptime}
       const ping = require('ping');
     case 'ping':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
-      const sentMessage = await message.reply("Pong... Calculando o ping...");
+      const sentMessage = await replySafe(message, "Pong... Calculando o ping...");
 
       const start = Date.now();
       const pingTime = Date.now() - start;
@@ -3111,27 +3112,27 @@ Tempo ativo: ${uptime}
 
     case 'abrirchat':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       const targetGroup = isGroup ? from : args[1];
       if (!targetGroup) {
-        await message.reply('Forneça o ID do grupo. Exemplo: !abrirchat 12036301234567890@g.us');
+        await replySafe(message, 'Forneça o ID do grupo. Exemplo: !abrirchat 12036301234567890@g.us');
         return;
       }
 
       await abrirConversa(targetGroup);
-      await message.reply(`Tentando abrir o chat do grupo ${targetGroup} na interface.`);
+      await replySafe(message, `Tentando abrir o chat do grupo ${targetGroup} na interface.`);
       break;
 
 
@@ -3139,54 +3140,54 @@ Tempo ativo: ${uptime}
 
     case 'abrirgrupo':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       try {
 
-        await chat.setMessagesAdminsOnly(false); await message.reply("✅ O grupo foi aberto para todos!");
+        await chat.setMessagesAdminsOnly(false); await replySafe(message, "✅ O grupo foi aberto para todos!");
       } catch (error) {
         console.error("Erro ao tentar abrir o grupo:", error);
-        await message.reply("❌ Não foi possível abrir o grupo. Tente novamente mais tarde.");
+        await replySafe(message, "❌ Não foi possível abrir o grupo. Tente novamente mais tarde.");
       }
       break;
 
     case 'abrirgp':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
 
       if (args.length < 2) {
-        await message.reply("Por favor, forneça o horário no formato HH:MM ou `0` para limpar.\nExemplo: `!abrirgp 08:00` ou `!abrirgp 0`");
+        await replySafe(message, "Por favor, forneça o horário no formato HH:MM ou `0` para limpar.\nExemplo: `!abrirgp 08:00` ou `!abrirgp 0`");
         return;
       }
 
@@ -3199,12 +3200,12 @@ Tempo ativo: ${uptime}
       if (sucessoAbrir) {
         if (horarioAbrir === '') {
 
-          await message.reply("Horário de abertura automático do grupo removido");
+          await replySafe(message, "Horário de abertura automático do grupo removido");
         } else {
-          await message.reply(`Horário de abertura configurado para: ${horarioAbrir}.`);
+          await replySafe(message, `Horário de abertura configurado para: ${horarioAbrir}.`);
         }
       } else {
-        await message.reply("Houve um erro ao alterar a configuração do horário de abertura.");
+        await replySafe(message, "Houve um erro ao alterar a configuração do horário de abertura.");
       }
       break;
 
@@ -3212,53 +3213,53 @@ Tempo ativo: ${uptime}
 
     case 'fechargrupo':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
       try {
 
         await chat.setMessagesAdminsOnly(true);
-        await message.reply("✅ O grupo foi fechado. Somente administradores podem enviar mensagens agora.");
+        await replySafe(message, "✅ O grupo foi fechado. Somente administradores podem enviar mensagens agora.");
       } catch (error) {
 
-        await message.reply("❌ Não foi possível fechar o grupo. Tente novamente mais tarde.");
+        await replySafe(message, "❌ Não foi possível fechar o grupo. Tente novamente mais tarde.");
       }
       break;
 
     case 'fechargp':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       if (args.length < 2) {
-        await message.reply("Por favor, forneça o horário no formato HH:MM ou `0` para limpar.\nExemplo: `!fechargp 20:00` ou `!fechargp 0`");
+        await replySafe(message, "Por favor, forneça o horário no formato HH:MM ou `0` para limpar.\nExemplo: `!fechargp 20:00` ou `!fechargp 0`");
         return;
       }
 
@@ -3268,12 +3269,12 @@ Tempo ativo: ${uptime}
 
       if (sucessoFechar) {
         if (horarioFechar === '') {
-          await message.reply("Horário de fechamento automatico do grupo removido");
+          await replySafe(message, "Horário de fechamento automatico do grupo removido");
         } else {
-          await message.reply(`Horário de fechamento configurado para: ${horarioFechar}.`);
+          await replySafe(message, `Horário de fechamento configurado para: ${horarioFechar}.`);
         }
       } else {
-        await message.reply("Houve um erro ao alterar a configuração do horário de fechamento.");
+        await replySafe(message, "Houve um erro ao alterar a configuração do horário de fechamento.");
       }
       break;
 
@@ -3283,20 +3284,20 @@ Tempo ativo: ${uptime}
 
     case 'soadm':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
       if (!(isDono || isGroupAdmins)) {
-        await message.reply(msgadmin);
+        await replySafe(message, msgadmin);
         return;
       }
 
       if (args.length < 2 || !['0', '1'].includes(args[1])) {
-        await message.reply("Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!soadm 1`");
+        await replySafe(message, "Por favor, forneça um parâmetro válido: `1` para ativar ou `0` para desativar.\nExemplo: `!soadm 1`");
         return;
       }
       const ativarSoadm = args[1] === '1';
@@ -3304,9 +3305,9 @@ Tempo ativo: ${uptime}
       const sucessoSoadm = await alterarFuncaoGrupo(from, 'ativarsoadm', ativarSoadm);
 
       if (sucessoSoadm) {
-        await message.reply(`Funcionalidade soadm ${ativarSoadm ? 'ativada' : 'desativada'}.`);
+        await replySafe(message, `Funcionalidade soadm ${ativarSoadm ? 'ativada' : 'desativada'}.`);
       } else {
-        await message.reply("Houve um erro ao alterar a configuração");
+        await replySafe(message, "Houve um erro ao alterar a configuração");
       }
       break;
 
@@ -3314,55 +3315,55 @@ Tempo ativo: ${uptime}
 
     case 'reiniciar':
       if (!isDono) {
-        await message.reply("Você precisa ser o dono ou administrador para usar este comando.");
+        await replySafe(message, "Você precisa ser o dono ou administrador para usar este comando.");
         return;
       }
 
-      await message.reply("Reiniciando o bot e limpando o cache...");
+      await replySafe(message, "Reiniciando o bot e limpando o cache...");
       try {
         exec('rm -rf ./.wwebjs_cache', (err) => {
           if (err) {
             console.error("Erro ao limpar o cache:", err);
-            message.reply("Houve um erro ao limpar o cache.");
+            replySafe(message, "Houve um erro ao limpar o cache.");
             return;
           }
           console.log("Cache limpo com sucesso.");
           exec('pm2 reload all', (pm2Err) => {
             if (pm2Err) {
               console.error("Erro ao reiniciar o bot com PM2:", pm2Err);
-              message.reply("Houve um erro ao reiniciar o bot.");
+              replySafe(message, "Houve um erro ao reiniciar o bot.");
               return;
             }
 
             console.log("Bot reiniciado com sucesso.");
-            message.reply("Bot reiniciado com sucesso!");
+            replySafe(message, "Bot reiniciado com sucesso!");
           });
         });
       } catch (error) {
         console.error("Erro ao executar o comando reiniciar:", error);
-        await message.reply("Ocorreu um erro inesperado ao tentar reiniciar o bot.");
+        await replySafe(message, "Ocorreu um erro inesperado ao tentar reiniciar o bot.");
       }
       break;
 
 
     case 'reload':
       if (!isDono) {
-        await message.reply("Você precisa ser o dono ou administrador para usar este comando.");
+        await replySafe(message, "Você precisa ser o dono ou administrador para usar este comando.");
         return;
       }
 
       const processName = args[1];
       if (!processName) {
-        await message.reply("Por favor, informe o nome do processo do PM2 que deseja reiniciar. Exemplo: `!reiniciarprocesso outrobot`");
+        await replySafe(message, "Por favor, informe o nome do processo do PM2 que deseja reiniciar. Exemplo: `!reiniciarprocesso outrobot`");
         return;
       }
 
-      await message.reply(`Reiniciando o processo PM2: ${processName}...`);
+      await replySafe(message, `Reiniciando o processo PM2: ${processName}...`);
 
       exec(`pm2 reload ${processName}`, (err, stdout, stderr) => {
         if (err) {
           console.error(`Erro ao reiniciar o processo ${processName}:`, err);
-          message.reply(`Erro ao reiniciar o processo: ${processName}. Verifique o nome e tente novamente.`);
+          replySafe(message, `Erro ao reiniciar o processo: ${processName}. Verifique o nome e tente novamente.`);
           return;
         }
 
@@ -3370,23 +3371,23 @@ Tempo ativo: ${uptime}
         console.log("Saída:", stdout);
         console.error("Erros:", stderr);
 
-        message.reply(`Processo ${processName} reiniciado com sucesso!`);
+        replySafe(message, `Processo ${processName} reiniciado com sucesso!`);
       });
       break;
 
 
     case 'pm2list':
       if (!isDono) {
-        await message.reply("Você precisa ser o dono ou administrador para usar este comando.");
+        await replySafe(message, "Você precisa ser o dono ou administrador para usar este comando.");
         return;
       }
 
-      await message.reply("Obtendo a lista de processos do PM2...");
+      await replySafe(message, "Obtendo a lista de processos do PM2...");
 
       exec('pm2 jlist', (err, stdout, stderr) => {
         if (err) {
           console.error("Erro ao listar os processos do PM2:", err);
-          message.reply("Erro ao listar os processos do PM2. Verifique o console para mais detalhes.");
+          replySafe(message, "Erro ao listar os processos do PM2. Verifique o console para mais detalhes.");
           return;
         }
 
@@ -3394,7 +3395,7 @@ Tempo ativo: ${uptime}
           const processes = JSON.parse(stdout);
 
           if (processes.length === 0) {
-            message.reply("Nenhum processo do PM2 encontrado.");
+            replySafe(message, "Nenhum processo do PM2 encontrado.");
             return;
           }
 
@@ -3404,10 +3405,10 @@ Tempo ativo: ${uptime}
             return `- ${name}: ${status}`;
           }).join('\n');
 
-          message.reply(`Lista de processos PM2:\n\n${processList}`);
+          replySafe(message, `Lista de processos PM2:\n\n${processList}`);
         } catch (parseError) {
           console.error("Erro ao processar os dados do PM2:", parseError);
-          message.reply("Erro ao processar os dados do PM2. Verifique o console para mais detalhes.");
+          replySafe(message, "Erro ao processar os dados do PM2. Verifique o console para mais detalhes.");
         }
 
         if (stderr) {
@@ -3421,16 +3422,16 @@ Tempo ativo: ${uptime}
 
     case 'sorte':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -3446,22 +3447,22 @@ Tempo ativo: ${uptime}
         mensagem = `🍀 Hmm, a sorte não está ao seu lado hoje... Apenas **${sorte}%** de sorte. Não desista! 🍀`;
       }
 
-      await message.reply(mensagem);
+      await replySafe(message, mensagem);
 
       break;
 
     case 'nivelsapatao':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       const nivelSapatao = Math.floor(Math.random() * 101);
@@ -3475,22 +3476,22 @@ Tempo ativo: ${uptime}
       } else {
         mensagemSapatao = `💥 Parabéns! Você atingiu o ápice do sapatonismo! Já pode abrir sua oficina de marcenaria! 😎🛠️`;
       }
-      await message.reply(`Seu nível sapatão é *${nivelSapatao}%*!
+      await replySafe(message, `Seu nível sapatão é *${nivelSapatao}%*!
 ${mensagemSapatao}`);
       break;
 
     case 'nivelgado':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -3505,22 +3506,22 @@ ${mensagemSapatao}`);
       } else {
         mensagemGado = `🐮💘 "Parabéns! Você atingiu o ápice do gado supremo! Se a pessoa postar ‘queria um açaí’, você já chega perguntando ‘com ou sem leite condensado?’" 🤡`;
       }
-      await message.reply(`Seu nível gado é *${nivelGado}%*!
+      await replySafe(message, `Seu nível gado é *${nivelGado}%*!
 ${mensagemGado}`);
       break;
 
     case 'nivelgay':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -3535,22 +3536,22 @@ ${mensagemGado}`);
       } else {
         mensagemGay = `💥 "Parabéns! Você desbloqueou o nível supremo! Sua existência já vem com glitter, close certo e uma dose extra de drama!" 💅🌈✨`;
       }
-      await message.reply(`Seu nível gay é *${nivelGay}%*!
+      await replySafe(message, `Seu nível gay é *${nivelGay}%*!
 ${mensagemGay}`);
       break;
 
     case 'nivelgostoso':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -3565,7 +3566,7 @@ ${mensagemGay}`);
       } else {
         mensagemGostoso = `💥 "ABSURDAMENTE GOSTOSO! Se fosse um prato, seria o favorito do chef! Proibido sair na rua sem aviso prévio!" 😏🔥`;
       }
-      await message.reply(`Seu nível gostoso é *${nivelGostoso}%*!
+      await replySafe(message, `Seu nível gostoso é *${nivelGostoso}%*!
 ${mensagemGostoso}`);
       break;
 
@@ -3575,28 +3576,28 @@ ${mensagemGostoso}`);
       const configuracao = await obterConfiguracaoGrupo(from);
 
       if (!configuracao) {
-        return await message.reply("❌ Não foi possível obter as configurações do grupo.");
+        return await replySafe(message, "❌ Não foi possível obter as configurações do grupo.");
       }
 
       const configFormatada = JSON.stringify(configuracao, null, 2);
       console.log("🔍 Configuração completa do grupo:", configuracao);
-      await message.reply(`📢 *Configurações completas do Grupo* 📢\n\n\`\`\`${configFormatada}\`\`\``);
+      await replySafe(message, `📢 *Configurações completas do Grupo* 📢\n\n\`\`\`${configFormatada}\`\`\``);
       break;
 
 
     case 'conselhos':
     case 'conselho':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
       try {
@@ -3620,27 +3621,27 @@ ${mensagemGostoso}`);
 
         const conselho = response.data.choices[0].message.content;
 
-        await message.reply(`━━━━━━━━━━━━━━━━━━\n✨ MOTIVAÇÃO DIÁRIA ✨\n━━━━━━━━━━━━━━━━━━\n\n${conselho}`);
+        await replySafe(message, `━━━━━━━━━━━━━━━━━━\n✨ MOTIVAÇÃO DIÁRIA ✨\n━━━━━━━━━━━━━━━━━━\n\n${conselho}`);
 
       } catch (error) {
         console.error('Erro ao obter conselho:', error.message);
-        await message.reply('❌ Ocorreu um erro ao tentar pegar um conselho. Tente novamente mais tarde!');
+        await replySafe(message, '❌ Ocorreu um erro ao tentar pegar um conselho. Tente novamente mais tarde!');
       }
 
       break;
 
     case 'conselhos2':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -3669,11 +3670,11 @@ ${mensagemGostoso}`);
 
         const conselho = response.data.choices[0].message.content;
 
-        await message.reply(`\n💬 CONSELHO DO DIA 💬\n\n${conselho}`);
+        await replySafe(message, `\n💬 CONSELHO DO DIA 💬\n\n${conselho}`);
 
       } catch (error) {
         console.error('Erro ao obter conselho:', error.message);
-        await message.reply('❌ Ocorreu um erro ao tentar pegar um conselho. Tente novamente mais tarde!');
+        await replySafe(message, '❌ Ocorreu um erro ao tentar pegar um conselho. Tente novamente mais tarde!');
       }
 
       break;
@@ -3681,16 +3682,16 @@ ${mensagemGostoso}`);
 
     case 'piada':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -3715,11 +3716,11 @@ ${mensagemGostoso}`);
 
         const conselho = response.data.choices[0].message.content;
 
-        await message.reply(`${conselho}`);
+        await replySafe(message, `${conselho}`);
 
       } catch (error) {
         console.error('Erro ao obter conselho:', error.message);
-        await message.reply('❌ Ocorreu um erro ao tentar pegar um conselho. Tente novamente mais tarde!');
+        await replySafe(message, '❌ Ocorreu um erro ao tentar pegar um conselho. Tente novamente mais tarde!');
       }
 
       break;
@@ -3729,16 +3730,16 @@ ${mensagemGostoso}`);
     case 'sticker':
     case 's':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -3817,7 +3818,7 @@ ${mensagemGostoso}`);
             const quotedMedia = await quotedMsg.downloadMedia();
             await processAndSendSticker(quotedMedia);
           } else {
-            await message.reply('❌ A mensagem citada não contém mídia válida.');
+            await replySafe(message, '❌ A mensagem citada não contém mídia válida.');
           }
         }
 
@@ -3830,26 +3831,26 @@ ${mensagemGostoso}`);
           await processAndSendSticker(media);
         } else {
 
-          await message.reply('❌ Nenhuma mídia encontrada para enviar como sticker.');
+          await replySafe(message, '❌ Nenhuma mídia encontrada para enviar como sticker.');
         }
       } catch (error) {
 
-        await message.reply('❌ Ocorreu um erro ao tentar enviar o sticker.');
+        await replySafe(message, '❌ Ocorreu um erro ao tentar enviar o sticker.');
       }
       break;
 
     case 'tiktok':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -3858,31 +3859,31 @@ ${mensagemGostoso}`);
         const messageText = message.body.slice(7).trim(); const tiktokUrl = messageText.startsWith('http') ? messageText : null;
 
         if (!tiktokUrl) {
-          await message.reply("❌ Por favor, envie um link válido do TikTok. Exemplo: !tiktok https://www.tiktok.com/...");
+          await replySafe(message, "❌ Por favor, envie um link válido do TikTok. Exemplo: !tiktok https://www.tiktok.com/...");
           return;
         }
 
-        await message.reply("🔄 Processando seu link do TikTok, aguarde só um momento...");
+        await replySafe(message, "🔄 Processando seu link do TikTok, aguarde só um momento...");
 
         await processTikTokMedia(tiktokUrl, message.from);
       } catch (error) {
         console.error(`❌ Erro ao processar o comando TikTok: ${error.message}`);
-        await message.reply("❌ Ocorreu um erro ao processar o comando TikTok. Tente novamente.");
+        await replySafe(message, "❌ Ocorreu um erro ao processar o comando TikTok. Tente novamente.");
       }
       break;
 
     case 'kwai':
       if (!aluguelStatus.ativo) {
-        await message.reply(msgaluguel);
+        await replySafe(message, msgaluguel);
         return;
       }
       if (!isGroup) {
-        await message.reply(msgsogrupo);
+        await replySafe(message, msgsogrupo);
         return;
       }
 
       if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await message.reply(modosoadm);
+        await replySafe(message, modosoadm);
         return;
       }
 
@@ -3891,16 +3892,16 @@ ${mensagemGostoso}`);
         const messageText = message.body.slice(5).trim(); const kwaiUrl = messageText.startsWith('http') ? messageText : null;
 
         if (!kwaiUrl) {
-          await message.reply("❌ Por favor, envie um link válido do Kwai. Exemplo: !kwai https://www.kwai.com/...");
+          await replySafe(message, "❌ Por favor, envie um link válido do Kwai. Exemplo: !kwai https://www.kwai.com/...");
           return;
         }
 
-        await message.reply("🔄 Processando seu link do Kwai, aguarde só um momento...");
+        await replySafe(message, "🔄 Processando seu link do Kwai, aguarde só um momento...");
 
         await processKwaiMedia(kwaiUrl, message.from);
       } catch (error) {
         console.error(`❌ Erro ao processar o comando Kwai: ${error.message}`);
-        await message.reply("❌ Ocorreu um erro ao processar o comando Kwai. Tente novamente.");
+        await replySafe(message, "❌ Ocorreu um erro ao processar o comando Kwai. Tente novamente.");
       }
       break;
 
@@ -3913,14 +3914,14 @@ ${mensagemGostoso}`);
       if (message.hasQuotedMsg) {
         const quotedMsg = await message.getQuotedMessage();
         if (!quotedMsg.hasMedia) {
-          await message.reply("A mensagem citada não contém mídia.");
+          await replySafe(message, "A mensagem citada não contém mídia.");
           return;
         }
         media = await quotedMsg.downloadMedia();
       } else if (message.hasMedia) {
         media = await message.downloadMedia();
       } else {
-        await message.reply("Responda a uma mensagem com mídia ou envie uma mídia para usar este comando.");
+        await replySafe(message, "Responda a uma mensagem com mídia ou envie uma mídia para usar este comando.");
         return;
       }
       try {
@@ -3928,7 +3929,7 @@ ${mensagemGostoso}`);
         const mediaMessage = await MessageMedia.fromUrl(fileLink);
         await client.sendMessage(message.from, mediaMessage);
       } catch (err) {
-        await message.reply(`❌ Erro ao enviar mídia: ${err.message}`);
+        await replySafe(message, `❌ Erro ao enviar mídia: ${err.message}`);
       }
       break;
 

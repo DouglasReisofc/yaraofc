@@ -266,7 +266,7 @@ async function simi1(message) {
                 const apiKey = 'xxxxxxxxxxxxxxxxxx';
 
                 if (!apiKey) {
-                    return await message.reply('❌ Ocorreu um erro na configuração do bot.');
+                    return await replySafe(message, '❌ Ocorreu um erro na configuração do bot.');
                 }
 
                 const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
@@ -287,14 +287,14 @@ async function simi1(message) {
 
                 if (response.data && response.data.choices && response.data.choices.length > 0) {
                     const resposta = response.data.choices[0].message.content;
-                    await message.reply(resposta);
+                    await replySafe(message, resposta);
                 } else {
-                    await message.reply('Desculpe, não consegui processar sua mensagem.');
+                    await replySafe(message, 'Desculpe, não consegui processar sua mensagem.');
                 }
             }
         }
     } catch (error) {
-        await message.reply('❌ Ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde!');
+        await replySafe(message, '❌ Ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde!');
     }
 }
 
@@ -329,7 +329,7 @@ async function autoresposta(message) {
                 ];
 
                 const respostaAleatoriaBot = frasesBot[Math.floor(Math.random() * frasesBot.length)];
-                await message.reply(respostaAleatoriaBot);
+                await replySafe(message, respostaAleatoriaBot);
                 return;
             }
 
@@ -348,7 +348,7 @@ async function autoresposta(message) {
                 ];
 
                 const fraseAleatoria = frasesBoaTarde[Math.floor(Math.random() * frasesBoaTarde.length)];
-                await message.reply(fraseAleatoria);
+                await replySafe(message, fraseAleatoria);
                 return;
             }
 
@@ -377,7 +377,7 @@ async function autoresposta(message) {
                 ];
 
                 const fraseAleatoria = frasesBomDia[Math.floor(Math.random() * frasesBomDia.length)];
-                await message.reply(fraseAleatoria);
+                await replySafe(message, fraseAleatoria);
                 return;
             }
 
@@ -396,19 +396,19 @@ async function autoresposta(message) {
                 ];
 
                 const fraseAleatoria = frasesBoaNoite[Math.floor(Math.random() * frasesBoaNoite.length)];
-                await message.reply(fraseAleatoria);
+                await replySafe(message, fraseAleatoria);
                 return;
             }
 
             if (mensagemEmMinusculo.includes('dono')) {
                 const numeroDono = config.numeroDono;
-                await message.reply(`Aqui está o número do meu dono: \nhttps://wa.me/${numeroDono}`);
+                await replySafe(message, `Aqui está o número do meu dono: \nhttps://wa.me/${numeroDono}`);
                 return;
             }
 
             if (mensagemEmMinusculo.includes('prefixo')) {
                 const prefixo = config.prefixo;
-                await message.reply(`Esse é meu prefixo: ${prefixo}`);
+                await replySafe(message, `Esse é meu prefixo: ${prefixo}`);
                 return;
             }
         }
@@ -734,6 +734,21 @@ async function sendMessageSafe(chatId, content, options = {}, openOnError = fals
     }
 }
 
+async function replySafe(message, content, options = {}, openOnError = false) {
+    if (!message || !message.from) {
+        console.error('replySafe: mensagem inválida');
+        return;
+    }
+    const opts = { ...(options || {}) };
+    if (message.id) {
+        const quoted = typeof message.id === 'object' ? message.id._serialized || message.id.id : message.id;
+        if (quoted) {
+            opts.quotedMessageId = quoted;
+        }
+    }
+    await sendMessageSafe(message.from, content, opts, openOnError);
+}
+
 
 
 
@@ -755,4 +770,5 @@ module.exports = {
     obterConfiguracaoGrupo,
     abrirConversa,
     sendMessageSafe,
+    replySafe,
 };

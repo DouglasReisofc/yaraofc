@@ -763,7 +763,7 @@ client.on('message', async (message) => {
   ${prefixo}tiktok
   ${prefixo}kwai`;
 
-      await sendMessageSafe(from, txtmenu);
+      await sendMessageSafe(from, txtmenu, {}, true);
       break;
 
     case 'serverip':
@@ -3972,7 +3972,9 @@ ${mensagemGostoso}`);
     |        
     |Prefixo: *${config.prefixo}*
     |Exemplo: *${config.prefixo}menu*
-    ╰━━━━━━━━━━━━━━━━━━━━╯`
+    ╰━━━━━━━━━━━━━━━━━━━━╯`,
+        {},
+        true
       );
       break;
   }

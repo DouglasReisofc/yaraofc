@@ -690,6 +690,18 @@ async function alterarFuncaoGrupo(groupId, funcIdentifier, value) {
     }
 }
 
+async function abrirConversa(chatId) {
+    try {
+        if (client.interface && typeof client.interface.openChatWindow === 'function') {
+            await client.interface.openChatWindow(chatId);
+        } else {
+            await client.getChatById(chatId);
+        }
+    } catch (error) {
+        console.error(`Erro ao abrir conversa do grupo ${chatId}:`, error);
+    }
+}
+
 
 
 
@@ -709,4 +721,5 @@ module.exports = {
     alterarFuncaoGrupo,
     alterarBemVindo,
     obterConfiguracaoGrupo,
+    abrirConversa,
 };

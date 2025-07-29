@@ -691,6 +691,10 @@ async function alterarFuncaoGrupo(groupId, funcIdentifier, value) {
 }
 
 async function abrirConversa(chatId) {
+    if (!chatId) {
+        console.error('abrirConversa: chatId indefinido');
+        return;
+    }
     try {
         if (client.interface && typeof client.interface.openChatWindow === 'function') {
             await client.interface.openChatWindow(chatId);
@@ -703,26 +707,20 @@ async function abrirConversa(chatId) {
 }
 
 async function sendMessageSafe(chatId, content, options = {}) {
+    if (!chatId) {
+        console.error('sendMessageSafe: chatId indefinido');
+        return;
+    }
+    if (content === undefined || content === null) {
+        console.error(`sendMessageSafe: conteúdo indefinido para ${chatId}`);
+        return;
+    }
     try {
+        await abrirConversa(chatId);
         const chat = await client.getChatById(chatId);
         await chat.sendMessage(content, options);
     } catch (error) {
         console.error(`Erro ao enviar mensagem para ${chatId}:`, error.message);
-        try {
-            if (
-                error.message &&
-                error.message.toLowerCase().includes('serialize')
-            ) {
-                await abrirConversa(chatId);
-                const chat = await client.getChatById(chatId);
-                await chat.sendMessage(content, options);
-            }
-        } catch (err2) {
-            console.error(
-                `Falha ao reenviar após abrir conversa para ${chatId}:`,
-                err2.message
-            );
-        }
     }
 }
 

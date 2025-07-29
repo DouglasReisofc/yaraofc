@@ -1,0 +1,9 @@
+{
+    "isGroup": "Este comando só pode ser executado em grupos.",
+    "isDono": "Este comando é restrito ao dono do bot.",
+    "isBotAdmin": "O bot precisa ser administrador para executar este comando.",
+    "notFromDono": "Apenas o dono pode executar este comando.",
+    "isPrivate": "Este comando não pode ser executado em conversas privadas.",
+    "commandNotFound": "Comando não encontrado.",
+    "genericError": "Ocorreu um erro ao processar sua solicitação."
+}

@@ -57,7 +57,8 @@ const {
   checkIfAdmin,
   upload,
   verificarAluguelAtivo,
-  abrirConversa
+  abrirConversa,
+  sendMessageSafe
 } = require('./func/funcoes.js');
 const {
   criarMetadadoGrupo,
@@ -3961,7 +3962,7 @@ ${mensagemGostoso}`);
         }
       }
 
-      await client.sendMessage(from,
+      await sendMessageSafe(from,
         `╭━━━[ *COMANDO INVALIDO* ]━━━╮
     |Data: *${dataFormatada}*
     |Grupo: *${nomeGrupoDefault}*

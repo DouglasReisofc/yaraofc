@@ -702,6 +702,14 @@ async function abrirConversa(chatId) {
     }
 }
 
+async function sendMessageSafe(chatId, content, options = {}) {
+    try {
+        await client.sendMessage(chatId, content, options);
+    } catch (error) {
+        console.error(`Erro ao enviar mensagem para ${chatId}:`, error.message);
+    }
+}
+
 
 
 
@@ -722,4 +730,5 @@ module.exports = {
     alterarBemVindo,
     obterConfiguracaoGrupo,
     abrirConversa,
+    sendMessageSafe,
 };

@@ -706,7 +706,7 @@ async function abrirConversa(chatId) {
     }
 }
 
-async function sendMessageSafe(chatId, content, options = {}, openOnError = true) {
+async function sendMessageSafe(chatId, content, options = {}, openOnError = false) {
     if (!chatId) {
         console.error('sendMessageSafe: chatId indefinido');
         return;

@@ -109,9 +109,9 @@ async function sendAdToGroup(ad) {
         }
 
         if (media) {
-            await sendMessageSafe(ad.group_identifier, media, { caption: ad.message });
+            await sendMessageSafe(ad.group_identifier, media, { caption: ad.message }, true);
         } else {
-            await sendMessageSafe(ad.group_identifier, ad.message);
+            await sendMessageSafe(ad.group_identifier, ad.message, {}, true);
         }
 
         // Atualiza 'last_sent_at' na API

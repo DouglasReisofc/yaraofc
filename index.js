@@ -147,7 +147,7 @@ client.on('message', async (msg) => {
 
 // Função para recarregar o bot via PM2
 function recarregarBot() {
-  exec('pm2 reload yara', (err, stdout, stderr) => {
+  exec(`pm2 reload ${config.nomeBot}`, (err, stdout, stderr) => {
     if (err) {
       console.error(`Erro ao recarregar: ${err}`);
     }

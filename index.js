@@ -763,7 +763,7 @@ client.on('message', async (message) => {
   ${prefixo}tiktok
   ${prefixo}kwai`;
 
-      await message.reply(txtmenu);
+      await sendMessageSafe(from, txtmenu);
       break;
 
     case 'serverip':

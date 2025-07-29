@@ -1,6 +1,7 @@
 const { MessageMedia } = require('whatsapp-web.js');
 const axios = require('axios');
 const moment = require('moment-timezone');
+const { sendMessageSafe } = require('./funcoes.js');
 
 // Inicialização do cliente WhatsApp
 const client = require('../client.js');
@@ -108,11 +109,9 @@ async function sendAdToGroup(ad) {
         }
 
         if (media) {
-            //console.log(`[${sendTime}] Enviando mídia com legenda: ${ad.message}`);
-            await client.sendMessage(ad.group_identifier, media, { caption: ad.message });
+            await sendMessageSafe(ad.group_identifier, media, { caption: ad.message });
         } else {
-            //console.log(`[${sendTime}] Enviando mensagem de texto: ${ad.message}`);
-            await client.sendMessage(ad.group_identifier, ad.message);
+            await sendMessageSafe(ad.group_identifier, ad.message);
         }
 
         // Atualiza 'last_sent_at' na API

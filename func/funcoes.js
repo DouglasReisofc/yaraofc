@@ -704,7 +704,9 @@ async function abrirConversa(chatId) {
 
 async function sendMessageSafe(chatId, content, options = {}) {
     try {
-        await client.sendMessage(chatId, content, options);
+        await abrirConversa(chatId);
+        const chat = await client.getChatById(chatId);
+        await chat.sendMessage(content, options);
     } catch (error) {
         console.error(`Erro ao enviar mensagem para ${chatId}:`, error.message);
     }

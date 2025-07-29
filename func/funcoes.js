@@ -704,11 +704,25 @@ async function abrirConversa(chatId) {
 
 async function sendMessageSafe(chatId, content, options = {}) {
     try {
-        await abrirConversa(chatId);
         const chat = await client.getChatById(chatId);
         await chat.sendMessage(content, options);
     } catch (error) {
         console.error(`Erro ao enviar mensagem para ${chatId}:`, error.message);
+        try {
+            if (
+                error.message &&
+                error.message.toLowerCase().includes('serialize')
+            ) {
+                await abrirConversa(chatId);
+                const chat = await client.getChatById(chatId);
+                await chat.sendMessage(content, options);
+            }
+        } catch (err2) {
+            console.error(
+                `Falha ao reenviar após abrir conversa para ${chatId}:`,
+                err2.message
+            );
+        }
     }
 }
 

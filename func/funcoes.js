@@ -706,7 +706,7 @@ async function abrirConversa(chatId) {
     }
 }
 
-async function sendMessageSafe(chatId, content, options = {}) {
+async function sendMessageSafe(chatId, content, options = {}, openOnError = true) {
     if (!chatId) {
         console.error('sendMessageSafe: chatId indefinido');
         return;
@@ -715,11 +715,21 @@ async function sendMessageSafe(chatId, content, options = {}) {
         console.error(`sendMessageSafe: conteúdo indefinido para ${chatId}`);
         return;
     }
+
     try {
-        await abrirConversa(chatId);
         const chat = await client.getChatById(chatId);
         await chat.sendMessage(content, options);
     } catch (error) {
+        if (openOnError && /serialize/i.test(error.message)) {
+            try {
+                await abrirConversa(chatId);
+                const chat = await client.getChatById(chatId);
+                await chat.sendMessage(content, options);
+                return;
+            } catch (err2) {
+                console.error(`Erro ao reenviar mensagem para ${chatId}:`, err2.message);
+            }
+        }
         console.error(`Erro ao enviar mensagem para ${chatId}:`, error.message);
     }
 }

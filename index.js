@@ -56,7 +56,8 @@ const {
   alterarBemVindo,
   checkIfAdmin,
   upload,
-  verificarAluguelAtivo
+  verificarAluguelAtivo,
+  abrirConversa
 } = require('./func/funcoes.js');
 const {
   criarMetadadoGrupo,
@@ -1581,7 +1582,7 @@ client.on('message', async (message) => {
 
         sorteio.idMensagem = pollMessage.id._serialized;
         criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollMessage.id._serialized);
-        client.interface.openChatWindow(from);
+        await abrirConversa(from);
 
         setTimeout(async () => {
           const sorteioAtual = carregarSorteios().find(s => s.idMensagem === pollMessage.id._serialized);

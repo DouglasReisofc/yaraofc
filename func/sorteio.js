@@ -2,6 +2,7 @@ const client = require('../client.js');
 const fs = require('fs');
 const path = require('path');
 const moment = require('moment-timezone');
+const { abrirConversa } = require('./funcoes.js');
 
 // Defina o caminho para o arquivo JSON onde os sorteios serão armazenados
 const sorteiosPath = path.join(__dirname, '../db/sorteio/sorteio.json');
@@ -214,7 +215,7 @@ async function iniciarVerificacaoSorteiosAtivos() {
         const participantes = sorteio.participantes;
 
         // Abre a janela do chat do grupo ao encontrar um sorteio ativo
-        await client.interface.openChatWindow(sorteio.idGrupo);
+        await abrirConversa(sorteio.idGrupo);
 
         if (vencedores && vencedores.length > 0) {
           // Exibe os vencedores no console antes de mencioná-los

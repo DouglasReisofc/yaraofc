@@ -14,6 +14,8 @@ if (os.platform() === 'win32') {
 } else if (os.platform() === 'linux') {
     if (fs.existsSync('/usr/bin/brave-browser')) {
         chromePath = '/usr/bin/brave-browser';
+    } else if (fs.existsSync('/home/douglas/.config/chromium')) {
+        chromePath = '/home/douglas/.config/chromium';
     }
 }
 

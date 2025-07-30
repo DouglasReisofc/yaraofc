@@ -266,8 +266,8 @@ client.on('vote_update', async (vote) => {
   console.log("Evento 'vote_update' acionado!");
 
   const { parentMessage, voter, selectedOptions } = vote;
-  const pollId = parentMessage && parentMessage.id ? parentMessage.id._serialized : null;
-  const groupId = parentMessage && parentMessage.to ? parentMessage.to : null;
+  const pollId = parentMessage?._data?.id?._serialized || null;
+  const groupId = parentMessage?._data?.to || null;
 
   if (!pollId || !groupId) return;
 

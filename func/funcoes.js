@@ -707,6 +707,21 @@ async function abrirConversa(chatId) {
     }
 }
 
+/**
+ * Tenta obter a mensagem citada sem interromper o fluxo em caso de erro.
+ * @param {import('whatsapp-web.js').Message} message Mensagem de origem
+ * @returns {Promise<import('whatsapp-web.js').Message|null>} Mensagem citada ou null
+ */
+async function getQuotedMessageSafe(message) {
+    if (!message || !message.hasQuotedMsg) return null;
+    try {
+        return await message.getQuotedMessage();
+    } catch (err) {
+        console.error('Erro ao recuperar mensagem citada:', err);
+        return null;
+    }
+}
+
 
 
 
@@ -728,4 +743,5 @@ module.exports = {
     alterarBemVindo,
     obterConfiguracaoGrupo,
     abrirConversa,
+    getQuotedMessageSafe,
 };

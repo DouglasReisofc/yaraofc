@@ -57,7 +57,8 @@ const {
   checkIfAdmin,
   upload,
   verificarAluguelAtivo,
-  abrirConversa
+  abrirConversa,
+  getQuotedMessageSafe
 } = require('./func/funcoes.js');
 const {
   criarMetadadoGrupo,
@@ -1012,9 +1013,8 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
-
-        if (quotedMsg.hasMedia) {
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (quotedMsg && quotedMsg.hasMedia) {
           try {
             const media = await quotedMsg.downloadMedia();
             const imageUrl = await upload(media); alterarBemVindo(from, { fundobemvindo: imageUrl });
@@ -1024,8 +1024,10 @@ client.on('message', async (message) => {
           } catch (error) {
             await client.sendMessage(from, `Erro ao tentar fazer o upload da imagem: ${error.message}`);
           }
+        } else if (!quotedMsg) {
+          await client.sendMessage(from, 'Não foi possível acessar a mensagem citada.');
         } else {
-          await client.sendMessage(from, "A mensagem citada não contém mídia.");
+          await client.sendMessage(from, 'A mensagem citada não contém mídia.');
         }
       } else {
         await client.sendMessage(from, "Você precisa responder a uma mensagem com mídia para usar este comando.");
@@ -1054,9 +1056,8 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
-
-        if (quotedMsg.hasMedia) {
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (quotedMsg && quotedMsg.hasMedia) {
           try {
             const media = await quotedMsg.downloadMedia();
             const imageUrl = await upload(media); alterarBemVindo(from, { fundosaiu: imageUrl });
@@ -1066,8 +1067,10 @@ client.on('message', async (message) => {
           } catch (error) {
             await client.sendMessage(from, `Erro ao tentar fazer o upload da imagem: ${error.message}`);
           }
+        } else if (!quotedMsg) {
+          await client.sendMessage(from, 'Não foi possível acessar a mensagem citada.');
         } else {
-          await client.sendMessage(from, "A mensagem citada não contém mídia.");
+          await client.sendMessage(from, 'A mensagem citada não contém mídia.');
         }
       } else {
         await client.sendMessage(from, "Você precisa responder a uma mensagem com mídia para usar este comando.");
@@ -1094,16 +1097,17 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
-
-        if (quotedMsg.body) {
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (quotedMsg && quotedMsg.body) {
           const novaLegenda = quotedMsg.body.trim();
           alterarBemVindo(from, { legendasaiu: novaLegenda });
 
           await client.sendMessage(from, `Legenda de saída alterada para: "${novaLegenda}"`);
 
+        } else if (!quotedMsg) {
+          await client.sendMessage(from, 'Não foi possível acessar a mensagem citada.');
         } else {
-          await client.sendMessage(from, "A mensagem citada não contém texto.");
+          await client.sendMessage(from, 'A mensagem citada não contém texto.');
         }
       } else {
         await client.sendMessage(from, "Você precisa responder a uma mensagem com um texto para usar este comando e definir a legenda");
@@ -1414,14 +1418,13 @@ client.on('message', async (message) => {
         return;
       }
       if (message.hasQuotedMsg) {
-        try {
-          const quotedMsg = await message.getQuotedMessage();
-
-
-          const quotedMessageId = quotedMsg.id._serialized;
-
-          await quotedMsg.delete(true);
-        } catch (error) {
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (quotedMsg) {
+          try {
+            await quotedMsg.delete(true);
+          } catch (error) {
+            console.error('Erro ao apagar mensagem citada:', error);
+          }
         }
       }
       break;
@@ -1448,10 +1451,12 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        try {
-          const quotedMsg = await message.getQuotedMessage();
-          const quotedAuthor = quotedMsg.author || quotedMsg.from;
-
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (!quotedMsg) {
+          await client.sendMessage(from, 'Não foi possível acessar a mensagem citada.');
+        } else {
+          try {
+            const quotedAuthor = quotedMsg.author || quotedMsg.from;
           if (quotedAuthor) {
             console.log(`Banindo o participante ${quotedAuthor}`);
 
@@ -1460,14 +1465,20 @@ client.on('message', async (message) => {
 
             await client.sendMessage(from, `O participante ${quotedAuthor.replace('@c.us', '')} foi banido do grupo por motivos justos!`);
 
-            const quotedMessageId = quotedMsg.id._serialized;
-            await quotedMsg.delete(true);
+            if (quotedMsg) {
+              try {
+                await quotedMsg.delete(true);
+              } catch (err) {
+                console.error('Erro ao apagar mensagem citada:', err);
+              }
+            }
           } else {
             await client.sendMessage(from, 'Não foi possível identificar o participante citado para o banimento.');
           }
-        } catch (error) {
-          console.error('Erro ao tentar processar o banimento:', error);
-          await client.sendMessage(from, 'Ocorreu um erro ao tentar banir o participante.');
+          } catch (error) {
+            console.error('Erro ao tentar processar o banimento:', error);
+            await client.sendMessage(from, 'Ocorreu um erro ao tentar banir o participante.');
+          }
         }
 
       } else if (message.mentionedIds.length > 0) {
@@ -1775,7 +1786,7 @@ client.on('message', async (message) => {
             }
 
             if (message.hasQuotedMsg) {
-              const quotedMsg = await message.getQuotedMessage();
+              const quotedMsg = await getQuotedMessageSafe(message);
               if (quotedMsg) {
                 if (quotedMsg.hasMedia) {
                   const quotedMedia = await quotedMsg.downloadMedia();
@@ -2026,7 +2037,7 @@ client.on('message', async (message) => {
         let pinnedMessage;
 
         if (message.hasQuotedMsg) {
-          const quotedMsg = await message.getQuotedMessage();
+          const quotedMsg = await getQuotedMessageSafe(message);
           if (quotedMsg) {
             if (quotedMsg.hasMedia) {
               const quotedMedia = await quotedMsg.downloadMedia();
@@ -2218,7 +2229,7 @@ client.on('message', async (message) => {
         }
 
         if (message.hasQuotedMsg) {
-          const quotedMessage = await message.getQuotedMessage();
+          const quotedMessage = await getQuotedMessageSafe(message);
 
           if (quotedMessage) {
             const result = await quotedMessage.unpin();
@@ -2311,7 +2322,7 @@ client.on('message', async (message) => {
         return;
       }
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         await client.sendMessage(from, `
                 *Info da mensagem citada:*
                 ID: ${quotedMsg.id._serialized}
@@ -2344,7 +2355,7 @@ client.on('message', async (message) => {
         return;
       }
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         if (quotedMsg.hasMedia) {
           const media = await quotedMsg.downloadMedia();
           await client.sendMessage(message.from, media, { caption: 'Aqui está a mídia solicitada.' });
@@ -2377,7 +2388,7 @@ client.on('message', async (message) => {
         return;
       }
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         if (quotedMsg.hasMedia) {
           const media = await quotedMsg.downloadMedia();
           await client.sendMessage(message.from, media, { isViewOnce: true });
@@ -2410,7 +2421,7 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
 
         if (quotedMsg.hasMedia) {
           try {
@@ -2451,7 +2462,7 @@ client.on('message', async (message) => {
       console.log('Comando \'tourl2\' iniciado');
       try {
         if (message.hasQuotedMsg) {
-          const quotedMsg = await message.getQuotedMessage();
+          const quotedMsg = await getQuotedMessageSafe(message);
           if (quotedMsg && quotedMsg.hasMedia) {
             const quotedMedia = await quotedMsg.downloadMedia();
             const timestamp = Date.now();
@@ -2530,7 +2541,7 @@ client.on('message', async (message) => {
         let attachmentData = {};
 
         if (message.hasQuotedMsg) {
-          const quotedMsg = await message.getQuotedMessage();
+          const quotedMsg = await getQuotedMessageSafe(message);
 
           if (quotedMsg && quotedMsg.hasMedia) {
             const quotedMedia = await quotedMsg.downloadMedia();
@@ -2823,7 +2834,7 @@ client.on('message', async (message) => {
       let imageHorarios;
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         if (!quotedMsg.hasMedia) {
           await client.sendMessage(from, "A mensagem citada não contém mídia.");
           return;
@@ -3811,7 +3822,7 @@ ${mensagemGostoso}`);
         }
 
         async function handleQuotedMessage() {
-          const quotedMsg = await message.getQuotedMessage();
+          const quotedMsg = await getQuotedMessageSafe(message);
           if (quotedMsg && quotedMsg.hasMedia) {
             const quotedMedia = await quotedMsg.downloadMedia();
             await processAndSendSticker(quotedMedia);
@@ -3910,7 +3921,7 @@ ${mensagemGostoso}`);
     case 'telegram':
       let media;
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         if (!quotedMsg.hasMedia) {
           await client.sendMessage(from, "A mensagem citada não contém mídia.");
           return;

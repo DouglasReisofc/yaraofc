@@ -265,9 +265,11 @@ async function iniciarVerificacaoSorteiosAtivos() {
 client.on('vote_update', async (vote) => {
   console.log("Evento 'vote_update' acionado!");
 
-  const { parentMessage, voter, selectedOptions } = vote;
-  const pollId = parentMessage?._data?.id?._serialized || null;
-  const groupId = parentMessage?._data?.to || null;
+  const parent = vote.parentMessage;
+  const pollId =
+    parent?.id?._serialized || parent?._data?.id?._serialized || null;
+  const groupId = parent?.to || parent?._data?.to || null;
+  const { voter, selectedOptions } = vote;
 
   if (!pollId || !groupId) return;
 

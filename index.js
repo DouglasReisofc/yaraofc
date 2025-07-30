@@ -168,6 +168,82 @@ client.on('ready', () => {
   abrirOuFecharGp();
 });
 
+client.on('loading_screen', (percent, message) => {
+  formatBox('LOADING SCREEN', [
+    `Progresso: ${percent}%`,
+    `Mensagem: ${message}`
+  ]);
+});
+
+client.on('authenticated', () => {
+  formatBox('AUTHENTICATED', ['Cliente autenticado com sucesso']);
+});
+
+client.on('message_create', async (msg) => {
+  const lines = [
+    `ID: ${msg.id?._serialized || 'desconhecido'}`,
+    `De: ${msg.from}`,
+    `Conteúdo: ${msg.body.slice(0, 50)}`
+  ];
+  formatBox('MENSAGEM CRIADA', lines);
+});
+
+client.on('message_ciphertext', (msg) => {
+  const lines = [
+    `ID: ${msg.id?._serialized || 'desconhecido'}`,
+    'Mensagem criptografada recebida'
+  ];
+  formatBox('MENSAGEM CIFRADA', lines);
+});
+
+client.on('message_revoke_everyone', async (after, before) => {
+  const lines = [
+    `ID: ${after.id._serialized}`,
+    before ? `Conteúdo antes: ${before.body.slice(0, 50)}` : 'Sem conteúdo antes'
+  ];
+  formatBox('MENSAGEM APAGADA PARA TODOS', lines);
+});
+
+client.on('message_revoke_me', async (msg) => {
+  const lines = [
+    `ID: ${msg.id._serialized}`,
+    `Conteúdo: ${msg.body.slice(0, 50)}`
+  ];
+  formatBox('MENSAGEM APAGADA SÓ PARA MIM', lines);
+});
+
+client.on('message_ack', (msg, ack) => {
+  const lines = [
+    `ID: ${msg.id._serialized}`,
+    `ACK: ${ack}`
+  ];
+  formatBox('STATUS DA MENSAGEM', lines);
+});
+
+client.on('call', async (call) => {
+  const lines = [
+    `Chamada de: ${call.from}`,
+    `Tipo: ${call.isVideo ? 'Vídeo' : 'Áudio'}`
+  ];
+  formatBox('CHAMADA RECEBIDA', lines);
+});
+
+client.on('contact_changed', async (message, oldId, newId, isContact) => {
+  const lines = [
+    `Contato alterado: ${oldId} → ${newId}`,
+    `É contato salvo: ${isContact}`
+  ];
+  formatBox('CONTATO ALTERADO', lines);
+});
+
+client.on('group_membership_request', async (notification) => {
+  const lines = [
+    `Grupo: ${notification.chatId}`,
+    `Solicitante: ${notification.author}`
+  ];
+  formatBox('SOLICITAÇÃO DE ENTRADA', lines);
+});
+
 
 
 client.on('message', async (msg) => {

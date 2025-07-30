@@ -53,10 +53,6 @@ const client = new Client({
     }
 });
 
-// Compat: garanta que client.getChat exista
-if (typeof client.getChat !== 'function' && typeof client.getChatById === 'function') {
-    client.getChat = async (chatId) => client.getChatById(chatId);
-}
 
 
 

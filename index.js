@@ -1,6 +1,5 @@
 const client = require('./client.js');
-const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const Poll = require('whatsapp-web.js').Poll;
+const { MessageMedia, Poll } = require('whatsapp-web.js');
 const express = require('express');
 const socketIO = require('socket.io');
 const http = require('http');

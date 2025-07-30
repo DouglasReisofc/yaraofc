@@ -72,6 +72,19 @@ function logPollEvent(pollId, groupName) {
   formatBox('ENQUETE CRIADA', lines);
 }
 
+function logReactionDetails(reaction, chatName) {
+  const lines = [
+    `😀 Reação: ${reaction.reaction}`,
+    `💬 Mensagem: ${reaction.msgId && reaction.msgId.id ? reaction.msgId.id : JSON.stringify(reaction.msgId)}`,
+    `👤 Usuário: ${reaction.senderId}`,
+  ];
+  if (chatName) lines.push(`👥 Grupo: ${chatName}`);
+  lines.push(
+    `🕒 Horário (SP): ${moment.tz(reaction.timestamp * 1000, 'America/Sao_Paulo').format('DD/MM/YYYY HH:mm')}`
+  );
+  formatBox('REAÇÃO RECEBIDA', lines);
+}
+
 const { startAdProcessing } = require('./func/ads.js');
 
 const {
@@ -308,6 +321,17 @@ client.on('group_join', async (notification) => {
 
 client.on('group_leave', (notification) => {
   console.log('Group Leave:', notification);
+});
+
+client.on('message_reaction', async (reaction) => {
+  try {
+    const chat = await client.getChatById(reaction.id.remote);
+    const chatName = chat?.name;
+    logReactionDetails(reaction, chatName);
+  } catch (err) {
+    console.error('Erro ao obter chat para reação:', err.message);
+    logReactionDetails(reaction);
+  }
 });
 
 client.on('change_state', (state) => {

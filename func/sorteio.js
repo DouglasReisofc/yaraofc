@@ -117,6 +117,16 @@ function criarSorteio(idGrupo, titulo, duracao, ganhadores = 1, limite = 0, idMe
  * @param {string} idGrupo - ID do grupo no WhatsApp.
  * @param {string} participante - ID do participante a ser adicionado.
  */
+function logParticipante(idGrupo, participante, acao) {
+  const lines = [
+    `Grupo: ${idGrupo}`,
+    `Votante: ${participante}`,
+    `Ação: ${acao}`,
+    `Horário (SP): ${moment.tz('America/Sao_Paulo').format('DD/MM/YYYY HH:mm')}`
+  ];
+  formatBox('SORTEIO ATUALIZADO', lines);
+}
+
 function adicionarParticipante(idGrupo, participante) {
   const sorteios = carregarSorteios();
   const sorteio = sorteios.find(s => s.idGrupo === idGrupo);
@@ -125,7 +135,7 @@ function adicionarParticipante(idGrupo, participante) {
     if (!sorteio.participantes.includes(participante)) {
       sorteio.participantes.push(participante);
       salvarSorteios(sorteios);
-      console.log(`Participante ${participante} adicionado ao sorteio do grupo ${idGrupo}`);
+      logParticipante(idGrupo, participante, 'adicionado ao JSON');
     } else {
       console.log(`Participante ${participante} já está no sorteio do grupo ${idGrupo}`);
     }
@@ -146,7 +156,7 @@ function removerParticipante(idGrupo, participante) {
   if (sorteio) {
     sorteio.participantes = sorteio.participantes.filter(p => p !== participante);
     salvarSorteios(sorteios);
-    console.log(`Participante ${participante} removido do sorteio do grupo ${idGrupo}`);
+    logParticipante(idGrupo, participante, 'removido do JSON');
   } else {
     console.log(`Sorteio não encontrado para o grupo ${idGrupo}`);
   }

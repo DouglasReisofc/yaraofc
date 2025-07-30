@@ -266,7 +266,7 @@ async function simi1(message) {
                 const apiKey = 'xxxxxxxxxxxxxxxxxx';
 
                 if (!apiKey) {
-                    return await replySafe(message, '❌ Ocorreu um erro na configuração do bot.');
+                    return await client.sendMessage(message.from, '❌ Ocorreu um erro na configuração do bot.');
                 }
 
                 const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
@@ -287,14 +287,14 @@ async function simi1(message) {
 
                 if (response.data && response.data.choices && response.data.choices.length > 0) {
                     const resposta = response.data.choices[0].message.content;
-                    await replySafe(message, resposta);
+                    await client.sendMessage(message.from, resposta);
                 } else {
-                    await replySafe(message, 'Desculpe, não consegui processar sua mensagem.');
+                    await client.sendMessage(message.from, 'Desculpe, não consegui processar sua mensagem.');
                 }
             }
         }
     } catch (error) {
-        await replySafe(message, '❌ Ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde!');
+        await client.sendMessage(message.from, '❌ Ocorreu um erro ao processar sua mensagem. Tente novamente mais tarde!');
     }
 }
 
@@ -329,7 +329,7 @@ async function autoresposta(message) {
                 ];
 
                 const respostaAleatoriaBot = frasesBot[Math.floor(Math.random() * frasesBot.length)];
-                await replySafe(message, respostaAleatoriaBot);
+                await client.sendMessage(message.from, respostaAleatoriaBot);
                 return;
             }
 
@@ -348,7 +348,7 @@ async function autoresposta(message) {
                 ];
 
                 const fraseAleatoria = frasesBoaTarde[Math.floor(Math.random() * frasesBoaTarde.length)];
-                await replySafe(message, fraseAleatoria);
+                await client.sendMessage(message.from, fraseAleatoria);
                 return;
             }
 
@@ -377,7 +377,7 @@ async function autoresposta(message) {
                 ];
 
                 const fraseAleatoria = frasesBomDia[Math.floor(Math.random() * frasesBomDia.length)];
-                await replySafe(message, fraseAleatoria);
+                await client.sendMessage(message.from, fraseAleatoria);
                 return;
             }
 
@@ -396,19 +396,19 @@ async function autoresposta(message) {
                 ];
 
                 const fraseAleatoria = frasesBoaNoite[Math.floor(Math.random() * frasesBoaNoite.length)];
-                await replySafe(message, fraseAleatoria);
+                await client.sendMessage(message.from, fraseAleatoria);
                 return;
             }
 
             if (mensagemEmMinusculo.includes('dono')) {
                 const numeroDono = config.numeroDono;
-                await replySafe(message, `Aqui está o número do meu dono: \nhttps://wa.me/${numeroDono}`);
+                await client.sendMessage(message.from, `Aqui está o número do meu dono: \nhttps://wa.me/${numeroDono}`);
                 return;
             }
 
             if (mensagemEmMinusculo.includes('prefixo')) {
                 const prefixo = config.prefixo;
-                await replySafe(message, `Esse é meu prefixo: ${prefixo}`);
+                await client.sendMessage(message.from, `Esse é meu prefixo: ${prefixo}`);
                 return;
             }
         }
@@ -696,34 +696,17 @@ async function abrirConversa(chatId) {
         return;
     }
     try {
+        const chat = await client.getChatById(chatId);
         if (client.interface && typeof client.interface.openChatWindow === 'function') {
             await client.interface.openChatWindow(chatId);
-        } else {
-            await client.getChatById(chatId);
+        } else if (chat && typeof chat.sendSeen === 'function') {
+            await chat.sendSeen();
         }
     } catch (error) {
         console.error(`Erro ao abrir conversa do grupo ${chatId}:`, error);
     }
 }
 
-async function replySafe(message, content, options = {}) {
-    if (!message || !message.from) {
-        console.error('replySafe: mensagem inválida');
-        return;
-    }
-    const opts = { ...(options || {}) };
-    if (message.id) {
-        const quoted = typeof message.id === 'object' ? message.id._serialized || message.id.id : message.id;
-        if (quoted) {
-            opts.quotedMessageId = quoted;
-        }
-    }
-    try {
-        await client.sendMessage(message.from, content, opts);
-    } catch (error) {
-        console.error(`Erro ao enviar mensagem para ${message.from}:`, error.message);
-    }
-}
 
 
 
@@ -745,5 +728,4 @@ module.exports = {
     alterarBemVindo,
     obterConfiguracaoGrupo,
     abrirConversa,
-    replySafe,
 };

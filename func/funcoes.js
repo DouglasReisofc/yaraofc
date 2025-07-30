@@ -66,7 +66,7 @@ async function verificarAluguelAtivo(groupId) {
 
 async function checkIfAdmin(groupId, userId) {
     try {
-        const chat = await client.getChat(groupId);
+        const chat = await client.getChatById(groupId);
         const isAdmin = chat.groupMetadata.participants.some(participant => participant.id._serialized === userId && participant.isAdmin);
         return isAdmin;
     } catch (error) {
@@ -76,7 +76,7 @@ async function checkIfAdmin(groupId, userId) {
 
 async function checkIfBotAdmin(groupId) {
     try {
-        const chat = await client.getChat(groupId);
+        const chat = await client.getChatById(groupId);
         const isBotAdmin = chat.groupMetadata.participants.some(participant => participant.id._serialized === client.info.wid._serialized && participant.isAdmin);
         return isBotAdmin;
     } catch (error) {
@@ -115,7 +115,7 @@ async function antilinkhard(message) {
                 }
 
                 if (!isBotAdmin && Number(configuracao.antilinkhard) === 1) {
-                    const group = await client.getChat(from);
+                    const group = await client.getChatById(from);
                     const admins = group.groupMetadata.participants.filter(p => p.isAdmin).map(p => p.id._serialized);
                     const adminsMessage = `*ATENÇÃO:* O bot não tem permissão para banir usuários, por favor, verifique se ele é um administrador do grupo.`;
                     await client.sendMessage(from, adminsMessage, { mentions: admins });
@@ -129,7 +129,7 @@ async function antilinkhard(message) {
 
                 if (!(isDono || isGroupAdmins)) {
                     try {
-                        const group = await client.getChat(from);
+                        const group = await client.getChatById(from);
                         await group.removeParticipants([author]);
                         console.log(`Usuário ${author} banido do grupo ${from}.`);
                     } catch (error) {
@@ -177,7 +177,7 @@ async function antilink(message) {
                     }
 
                     if (!isBotAdmin && Number(configuracao.antilink) === 1) {
-                        const group = await client.getChat(from);
+                        const group = await client.getChatById(from);
                         const admins = group.groupMetadata.participants.filter(p => p.isAdmin).map(p => p.id._serialized);
                         const adminsMessage = `*ATENÇÃO:* O bot não tem permissão para excluir mensagens. Por favor, verifique se ele é um administrador do grupo.`;
                         await client.sendMessage(from, adminsMessage, { mentions: admins });
@@ -228,7 +228,7 @@ async function antilinkgp(message) {
                     }
 
                     if (!isBotAdmin && Number(configuracao.antilinkgp) === 1) {
-                        const group = await client.getChat(from);
+                        const group = await client.getChatById(from);
                         const admins = group.groupMetadata.participants.filter(p => p.isAdmin).map(p => p.id._serialized);
                         const adminsMessage = `*ATENÇÃO:* O bot não tem permissão para excluir mensagens. Por favor, verifique se ele é um administrador do grupo.`;
                         await client.sendMessage(from, adminsMessage, { mentions: admins });
@@ -439,7 +439,7 @@ function abrirOuFecharGp() {
 
                 if (horaAbrir && horaAbrir === agora) {
                     try {
-                        const chat = await client.getChat(groupId);
+                        const chat = await client.getChatById(groupId);
                         await chat.setMessagesAdminsOnly(false);
                         console.log(`[${agora}] Grupo ${groupId} ABERTO automaticamente.`);
                     } catch (err) {
@@ -448,7 +448,7 @@ function abrirOuFecharGp() {
                 }
                 if (horaFechar && horaFechar === agora) {
                     try {
-                        const chat = await client.getChat(groupId);
+                        const chat = await client.getChatById(groupId);
                         await chat.setMessagesAdminsOnly(true);
                     } catch (err) {
                     }
@@ -482,7 +482,7 @@ async function antifake(notification) {
             if (!participant.startsWith('55')) {
                 try {
 
-                    const groupChat = await client.getChat(groupId);
+                    const groupChat = await client.getChatById(groupId);
                     await groupChat.removeParticipants([participant]);
                     await client.sendMessage(groupId, `O usuário ${participant.replace('@c.us', '')} foi banido por usar um número não brasileiro.`);
 
@@ -696,7 +696,7 @@ async function abrirConversa(chatId) {
         return;
     }
     try {
-        const chat = await client.getChat(chatId);
+        const chat = await client.getChatById(chatId);
         if (client.interface && typeof client.interface.openChatWindow === 'function') {
             await client.interface.openChatWindow(chatId);
         } else if (chat && typeof chat.sendSeen === 'function') {

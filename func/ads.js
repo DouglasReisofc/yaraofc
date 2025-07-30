@@ -141,7 +141,7 @@ async function processAds() {
 
         // Verifica se o bot ainda está no grupo
         try {
-            await client.getChat(ad.group_identifier);
+            await client.getChatById(ad.group_identifier);
         } catch (err) {
             continue;
         }

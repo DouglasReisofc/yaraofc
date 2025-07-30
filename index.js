@@ -202,27 +202,6 @@ client.on('call', async (call) => {
 });
 
 
-    const media = await msg.downloadMedia();
-
-    if (media.mimetype === 'application/javascript') { // Verifica se é um arquivo .js
-      const filePath = './index.js'; // Caminho do arquivo no servidor
-      fs.writeFile(filePath, media.data, 'base64', (err) => {
-        if (err) {
-          client.sendMessage(msg.from, '❌ Erro ao atualizar o bot!');
-          console.error(err);
-        } else {
-          client.sendMessage(msg.from, '✅ Bot atualizado com sucesso! Recarregando...');
-          recarregarBot();
-        }
-      });
-    } else {
-      client.sendMessage(msg.from, '⚠️ Envie um arquivo válido (`index.js`)!');
-    }
-  }
-});
-    console.log(`Bot recarregado: ${stdout}`);
-  });
-}
 
 client.on('group_participants.update', async (update) => {
   try {
@@ -245,7 +224,6 @@ client.on('group_participants.update', async (update) => {
           }
         }
       }
-    }
   } catch (err) {
     console.error('[AutoBan] Erro geral no evento:', err.message);
   }

@@ -1,5 +1,6 @@
 const chalk = require('chalk');
 const path = require('path');
+const { abrirConversa } = require('../funcoes');
 const config = require(path.resolve(__dirname, '../../dono/config.json'));
 
 /**
@@ -21,7 +22,18 @@ async function sendPairingDetails(client, pairingCode) {
       `- Número do Bot: ${config.numeroBot}\n- Prefixo: ${config.prefixo}\n` +
       `- Site da API: ${config.siteapi}`;
 
-    await client.sendMessage(`${config.numeroDono}@c.us`, message);
+    const chatId = `${config.numeroDono}@c.us`;
+    try {
+      await client.sendMessage(chatId, message);
+    } catch (err) {
+      if (/serialize/i.test(err.message)) {
+        await abrirConversa(chatId);
+        const chat = await client.getChatById(chatId);
+        await chat.sendMessage(message);
+      } else {
+        throw err;
+      }
+    }
     console.log(
       chalk.green(
         'Código de pareamento e informações do bot enviados com sucesso ao dono!'
@@ -46,7 +58,18 @@ async function sendCustomMessage(client, number, message) {
       return;
     }
 
-    await client.sendMessage(`${number}@c.us`, message);
+    const chatId = `${number}@c.us`;
+    try {
+      await client.sendMessage(chatId, message);
+    } catch (err) {
+      if (/serialize/i.test(err.message)) {
+        await abrirConversa(chatId);
+        const chat = await client.getChatById(chatId);
+        await chat.sendMessage(message);
+      } else {
+        throw err;
+      }
+    }
     console.log(chalk.green(`Mensagem enviada com sucesso para ${number}!`));
   } catch (error) {
     console.error(chalk.red('Erro ao enviar a mensagem personalizada:'), error.message);

@@ -324,14 +324,20 @@ client.on('group_leave', (notification) => {
 });
 
 client.on('message_reaction', async (reaction) => {
-  try {
-    const chat = await client.getChatById(reaction.id.remote);
-    const chatName = chat?.name;
-    logReactionDetails(reaction, chatName);
-  } catch (err) {
-    console.error('Erro ao obter chat para reação:', err.message);
-    logReactionDetails(reaction);
+  console.log('Raw reaction object:', JSON.stringify(reaction, null, 2));
+  const chatId =
+    (reaction.msgId && reaction.msgId.remote) ||
+    (reaction.id && reaction.id.remote);
+  let chatName;
+  if (chatId) {
+    try {
+      const chat = await client.getChatById(chatId);
+      chatName = chat?.name;
+    } catch (err) {
+      console.error('Erro ao obter chat para reação:', err.message);
+    }
   }
+  logReactionDetails(reaction, chatName);
 });
 
 client.on('change_state', (state) => {

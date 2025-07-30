@@ -722,37 +722,6 @@ async function getQuotedMessageSafe(message) {
     }
 }
 
-/**
- * Envia uma mensagem garantindo que o chat esteja acessível.
- * Reabre a conversa e tenta novamente em caso de erro de serialização.
- * @param {import('whatsapp-web.js').Client} client Cliente do WhatsApp
- * @param {string} chatId ID do chat de destino
- * @param {string} content Conteúdo da mensagem
- * @param {import('whatsapp-web.js').MessageSendOptions} [options]
- */
-async function sendMessageReliable(client, chatId, content, options = {}) {
-    try {
-        const state = await client.getState().catch(() => null);
-        if (state !== 'CONNECTED') {
-            console.warn('Cliente não conectado, mensagem não enviada.');
-            return;
-        }
-        const result = await client.sendMessage(chatId, content, options);
-        console.log('sendMessageReliable result:', result);
-    } catch (err) {
-        if (err.message && err.message.includes('serialize')) {
-            try {
-                await abrirConversa(chatId);
-                const retryResult = await client.sendMessage(chatId, content, options);
-                console.log('sendMessageReliable retry result:', retryResult);
-                return;
-            } catch (err2) {
-                console.error('Falha ao reabrir o chat e reenviar mensagem:', err2);
-            }
-        }
-        console.error(`Erro ao enviar mensagem para ${chatId}:`, err);
-    }
-}
 
 
 
@@ -776,5 +745,4 @@ module.exports = {
     obterConfiguracaoGrupo,
     abrirConversa,
     getQuotedMessageSafe,
-    sendMessageReliable,
 };

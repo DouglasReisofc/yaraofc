@@ -6,7 +6,7 @@ const path = require('path');
 const qrcode = require('qrcode-terminal'); // Biblioteca para imprimir QR Code no terminal
 const config = require('./dono/config.json');
 
-const { sendMessageReliable } = require('./func/funcoes');
+
 
 let chromePath = '/usr/bin/chromium-browser';
 
@@ -58,13 +58,7 @@ if (typeof client.getChat !== 'function' && typeof client.getChatById === 'funct
     client.getChat = async (chatId) => client.getChatById(chatId);
 }
 
-// Loga o retorno de todas as mensagens enviadas
-const originalSendMessage = client.sendMessage.bind(client);
-client.sendMessage = async (...args) => {
-    const result = await originalSendMessage(...args);
-    console.log('sendMessage returned:', result);
-    return result;
-};
+
 
 // 📌 Exibir QR Code no terminal
 client.on('qr', qr => {
@@ -76,8 +70,7 @@ client.on('qr', qr => {
 client.on('ready', async () => {
     console.log(chalk.green(`🚀 Bot '${config.nomeBot || 'Bot'}' iniciado com sucesso e pronto para uso!`));
     if (config.numeroDono) {
-        await sendMessageReliable(
-            client,
+        await client.sendMessage(
             config.numeroDono + '@c.us',
             `✅ O bot '${config.nomeBot || 'Bot'}' está ativo e pronto para uso!`
         );
@@ -87,8 +80,7 @@ client.on('ready', async () => {
 // 📌 Lida com falhas de autenticação e reinicia o bot
 client.on('auth_failure', async () => {
     console.error('❌ Falha na autenticação! Reiniciando cliente...');
-    await sendMessageReliable(
-        client,
+    await client.sendMessage(
         config.numeroDono + '@c.us',
         '⚠️ Falha na autenticação. O bot será reiniciado.'
     );
@@ -98,8 +90,7 @@ client.on('auth_failure', async () => {
 // 📌 Reinicia automaticamente caso seja desconectado
 client.on('disconnected', async (reason) => {
     console.error(`🔌 Conexão perdida (${reason}). Reiniciando cliente...`);
-    await sendMessageReliable(
-        client,
+    await client.sendMessage(
         config.numeroDono + '@c.us',
         `⚠️ O bot foi desconectado (${reason}). Reiniciando...`
     );
@@ -111,8 +102,7 @@ client.on('change_state', async (state) => {
     console.log(`🔄 Estado atualizado: ${state}`);
     if (['CONFLICT', 'UNPAIRED', 'UNLAUNCHED', 'BANNED'].includes(state)) {
         console.warn('⚠️ Sessão pode estar inválida. Reiniciando...');
-        await sendMessageReliable(
-            client,
+        await client.sendMessage(
             config.numeroDono + '@c.us',
             '⚠️ A sessão foi detectada como inválida. O bot será reiniciado.'
         );

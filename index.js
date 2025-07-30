@@ -58,8 +58,7 @@ const {
   upload,
   verificarAluguelAtivo,
   abrirConversa,
-  getQuotedMessageSafe,
-  sendMessageReliable
+  getQuotedMessageSafe
 } = require('./func/funcoes.js');
 const {
   criarMetadadoGrupo,
@@ -3115,8 +3114,7 @@ Tempo ativo: ${uptime}
       }
 
       const start = Date.now();
-      const result = await client.sendMessage(from, "Pong...");
-      console.log('Ping command result:', result);
+      await client.sendMessage(from, "Pong...");
       const pingTime = Date.now() - start;
       await client.sendMessage(from, `🏓 O ping do bot é: ${pingTime}ms`);
       break;
@@ -3974,7 +3972,7 @@ ${mensagemGostoso}`);
         }
       }
 
-      await sendMessageReliable(client, from,
+      await client.sendMessage(from,
         `╭━━━[ *COMANDO INVALIDO* ]━━━╮
     |Data: *${dataFormatada}*
     |Grupo: *${nomeGrupoDefault}*

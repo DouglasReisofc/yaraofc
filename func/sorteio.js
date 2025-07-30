@@ -265,26 +265,28 @@ async function iniciarVerificacaoSorteiosAtivos() {
 client.on('vote_update', async (vote) => {
   console.log("Evento 'vote_update' acionado!");
 
-  const pollId = vote.parentMessage.id ? vote.parentMessage.id._serialized : 'Não encontrado';
-  const voter = vote.voter;
-  const selectedOptions = vote.selectedOptions;
+  const { parentMessage, voter, selectedOptions } = vote;
+  const pollId = parentMessage && parentMessage.id ? parentMessage.id._serialized : null;
+  const groupId = parentMessage && parentMessage.to ? parentMessage.to : null;
 
-  const sorteioAtivo = await verificarSorteioAtivo(vote.parentMessage.to);
+  if (!pollId || !groupId) return;
 
+  const sorteioAtivo = await verificarSorteioAtivo(groupId);
   if (!sorteioAtivo || pollId !== sorteioAtivo.idMensagem) {
     return;
   }
 
-  const groupId = vote.parentMessage.to;
-
   if (selectedOptions.length === 0) {
     removerParticipante(groupId, voter);
   } else {
-    const chosenOption = selectedOptions[0].name;
-    if (chosenOption === 'Participar ❤️') {
-      adicionarParticipante(groupId, voter);
-    } else if (chosenOption === 'Não Participar 😬') {
-      removerParticipante(groupId, voter);
+    const option = selectedOptions[0];
+    switch (option.localId) {
+      case 0:
+        adicionarParticipante(groupId, voter);
+        break;
+      case 1:
+        removerParticipante(groupId, voter);
+        break;
     }
   }
 

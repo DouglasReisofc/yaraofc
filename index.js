@@ -1574,11 +1574,8 @@ client.on('message', async (message) => {
       const pollOptions = ["Participar ❤️", "Não Participar 😬"];
 
       if (chat.isGroup) {
-        const participants = chat.participants;
         const poll = new Poll(tituloSorteio, pollOptions, { allowMultipleAnswers: false });
-        const pollMessage = await client.sendMessage(from, poll, {
-          mentions: participants.map(p => p.id._serialized),
-        });
+        const pollMessage = await client.sendMessage(from, poll);
         const pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
         logPollEvent(pollId, chat.name);
         sorteio.idMensagem = pollId;

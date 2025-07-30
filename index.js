@@ -3961,18 +3961,26 @@ ${mensagemGostoso}`);
         }
       }
 
-      await client.sendMessage(from,
-        `╭━━━[ *COMANDO INVALIDO* ]━━━╮
+      try {
+        await client.sendMessage(
+          from,
+          `╭━━━[ *COMANDO INVALIDO* ]━━━╮
     |Data: *${dataFormatada}*
     |Grupo: *${nomeGrupoDefault}*
     | ID:(${idMensagem})
     |
     |*Número: ${author}*
-    |        
+    |
     |Prefixo: *${config.prefixo}*
     |Exemplo: *${config.prefixo}menu*
     ╰━━━━━━━━━━━━━━━━━━━━╯`
-      );
+        );
+      } catch (error) {
+        console.error(
+          'Erro ao enviar mensagem de comando inválido:',
+          error.message
+        );
+      }
       break;
   }
 });

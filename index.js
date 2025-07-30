@@ -36,6 +36,13 @@ const apikeysite = config.apikeysite;
 const nomedoBot = config.nomeBot;
 const numerobot = config.numeroBot
 
+// Mensagem padrão para respostas privadas e recusas de chamada
+const mensagemPadraoPV =
+  "🔹 Olá! Sou um robô automatizado para administração de grupos no WhatsApp.\n\n" +
+  "⚠️ Não sou responsável por nenhuma ação tomada no grupo, apenas obedeço comandos programados para auxiliar na moderação.\n\n" +
+  "📌 Se precisar de suporte ou resolver alguma questão, entre em contato com um administrador do grupo.\n\n" +
+  "🔹 Obrigado pela compreensão!";
+
 
 function formatBox(title, lines) {
   const width = Math.max(...lines.map(l => l.length));
@@ -179,46 +186,6 @@ client.on('authenticated', () => {
   formatBox('AUTHENTICATED', ['Cliente autenticado com sucesso']);
 });
 
-client.on('message_create', async (msg) => {
-  const lines = [
-    `ID: ${msg.id?._serialized || 'desconhecido'}`,
-    `De: ${msg.from}`,
-    `Conteúdo: ${msg.body.slice(0, 50)}`
-  ];
-  formatBox('MENSAGEM CRIADA', lines);
-});
-
-client.on('message_ciphertext', (msg) => {
-  const lines = [
-    `ID: ${msg.id?._serialized || 'desconhecido'}`,
-    'Mensagem criptografada recebida'
-  ];
-  formatBox('MENSAGEM CIFRADA', lines);
-});
-
-client.on('message_revoke_everyone', async (after, before) => {
-  const lines = [
-    `ID: ${after.id._serialized}`,
-    before ? `Conteúdo antes: ${before.body.slice(0, 50)}` : 'Sem conteúdo antes'
-  ];
-  formatBox('MENSAGEM APAGADA PARA TODOS', lines);
-});
-
-client.on('message_revoke_me', async (msg) => {
-  const lines = [
-    `ID: ${msg.id._serialized}`,
-    `Conteúdo: ${msg.body.slice(0, 50)}`
-  ];
-  formatBox('MENSAGEM APAGADA SÓ PARA MIM', lines);
-});
-
-client.on('message_ack', (msg, ack) => {
-  const lines = [
-    `ID: ${msg.id._serialized}`,
-    `ACK: ${ack}`
-  ];
-  formatBox('STATUS DA MENSAGEM', lines);
-});
 
 client.on('call', async (call) => {
   const lines = [
@@ -226,29 +193,14 @@ client.on('call', async (call) => {
     `Tipo: ${call.isVideo ? 'Vídeo' : 'Áudio'}`
   ];
   formatBox('CHAMADA RECEBIDA', lines);
+  try {
+    await call.reject();
+    await client.sendMessage(call.from, mensagemPadraoPV);
+  } catch (err) {
+    console.error('Erro ao rejeitar chamada:', err);
+  }
 });
 
-client.on('contact_changed', async (message, oldId, newId, isContact) => {
-  const lines = [
-    `Contato alterado: ${oldId} → ${newId}`,
-    `É contato salvo: ${isContact}`
-  ];
-  formatBox('CONTATO ALTERADO', lines);
-});
-
-client.on('group_membership_request', async (notification) => {
-  const lines = [
-    `Grupo: ${notification.chatId}`,
-    `Solicitante: ${notification.author}`
-  ];
-  formatBox('SOLICITAÇÃO DE ENTRADA', lines);
-});
-
-
-
-client.on('message', async (msg) => {
-
-  if (msg.body === '!updatebot' && msg.hasMedia) {
 
     const media = await msg.downloadMedia();
 
@@ -268,13 +220,6 @@ client.on('message', async (msg) => {
     }
   }
 });
-
-// Função para recarregar o bot via PM2
-function recarregarBot() {
-  exec(`pm2 reload ${config.nomeBot}`, (err, stdout, stderr) => {
-    if (err) {
-      console.error(`Erro ao recarregar: ${err}`);
-    }
     console.log(`Bot recarregado: ${stdout}`);
   });
 }
@@ -283,13 +228,6 @@ client.on('group_participants.update', async (update) => {
   try {
     const grupoId = update.id; // Ex: 12036...@g.us
     const action = update.action;
-    const participantes = update.participants;
-
-    // Apenas quando alguém for adicionado
-    if (action === 'add') {
-      // Consulta no banco usando o ID com @g.us (coluna correta é 'groupId')
-      const configGrupo = await db('groups').where({ groupId: grupoId }).first();
-
       // Verifica se o AutoBan está ativado para esse grupo
       if (configGrupo?.autoban === 1) {
         for (const participante of participantes) {
@@ -339,7 +277,7 @@ client.on('group_join', async (notification) => {
 
   try {
 
-    const chat = await client.getChatById(groupId);
+    const chat = await client.getChat(groupId);
     const groupName = chat.name;
     const configuracaoGrupo = await obterDadosBoasVindasESaida(groupId);
 
@@ -407,7 +345,7 @@ client.on('message_reaction', async (reaction) => {
   let chatName;
   if (chatId) {
     try {
-      const chat = await client.getChatById(chatId);
+      const chat = await client.getChat(chatId);
       chatName = chat?.name;
     } catch (err) {
       console.error('Erro ao obter chat para reação:', err.message);
@@ -440,7 +378,7 @@ app.post('/send-group-message', async (req, res) => {
   }
 
   try {
-    const chat = await client.getChatById(groupId);
+    const chat = await client.getChat(groupId);
 
     if (chat.isGroup) {
       const participants = chat.participants;
@@ -537,7 +475,7 @@ app.post('/groups/join-and-info', async (req, res) => {
     } else if (groupId) {
       finalGroupId = groupId;
     }
-    const groupInfo = await client.getChatById(finalGroupId);
+    const groupInfo = await client.getChat(finalGroupId);
     const groupProfilePicUrl = await client.getProfilePicUrl(finalGroupId);
 
     const response = {
@@ -592,18 +530,14 @@ client.on('message', async (message) => {
 
 
   if (!isGroup && !usuariosRespondidos.has(remetente)) {
-    let respostaPadrao = "🔹 Olá! Sou um robô automatizado para administração de grupos no WhatsApp.\n\n⚠️ Não sou responsável por nenhuma ação tomada no grupo, apenas obedeço comandos programados para auxiliar na moderação.\n\n📌 Se precisar de suporte ou resolver alguma questão, entre em contato com um administrador do grupo.\n\n🔹 Obrigado pela compreensão!";
     try {
-      await client.sendMessage(remetente, respostaPadrao);
+      await client.sendMessage(remetente, mensagemPadraoPV);
       usuariosRespondidos.add(remetente);
       console.log(chalk.greenBright(`✅ Resposta enviada para ${remetente}`));
     } catch (error) {
       console.error(`❌ Erro ao enviar mensagem para ${remetente}:`, error);
     }
   }
-  const pushName = message._data?.notifyName || message._data?.pushName || message._data?.sender?.pushname;
-  const linksFormatted = message.links && message.links.length > 0 ? message.links.map(l => l.link).join(', ') : '';
-  logMessageDetails(message, { pushName, isGroup, chatId: remetente, timestamp: message.timestamp, links: linksFormatted });
   // 📌 Processar comandos apenas se a mensagem começar com "!"
   if (message.body.startsWith("!")) {
     let command = message.body.split(" ")[0].toLowerCase();
@@ -630,7 +564,7 @@ client.on('message', async (message) => {
   const donoComSuFixo = `${config.numeroDono}@c.us`;
   const isGroup = from.endsWith('@g.us');
 
-  const chat = await client.getChatById(from);
+  const chat = await client.getChat(from);
 
   await chat.sendSeen();
 

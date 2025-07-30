@@ -69,14 +69,16 @@ client.on('ready', async () => {
 // 📌 Lida com falhas de autenticação e reinicia o bot
 client.on('auth_failure', async () => {
     console.error('❌ Falha na autenticação! Reiniciando cliente...');
-    await sendCustomMessage(config.numeroDono, "⚠️ Falha na autenticação. O bot será reiniciado.").catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
+    await sendCustomMessage(client, config.numeroDono, '⚠️ Falha na autenticação. O bot será reiniciado.')
+        .catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
     process.exit(1);
 });
 
 // 📌 Reinicia automaticamente caso seja desconectado
 client.on('disconnected', async (reason) => {
     console.error(`🔌 Conexão perdida (${reason}). Reiniciando cliente...`);
-    await sendCustomMessage(config.numeroDono, `⚠️ O bot foi desconectado (${reason}). Reiniciando...`).catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
+    await sendCustomMessage(client, config.numeroDono, `⚠️ O bot foi desconectado (${reason}). Reiniciando...`)
+        .catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
     process.exit(1);
 });
 
@@ -85,7 +87,8 @@ client.on('change_state', async (state) => {
     console.log(`🔄 Estado atualizado: ${state}`);
     if (['CONFLICT', 'UNPAIRED', 'UNLAUNCHED', 'BANNED'].includes(state)) {
         console.warn('⚠️ Sessão pode estar inválida. Reiniciando...');
-        await sendCustomMessage(config.numeroDono, "⚠️ A sessão foi detectada como inválida. O bot será reiniciado.").catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
+        await sendCustomMessage(client, config.numeroDono, '⚠️ A sessão foi detectada como inválida. O bot será reiniciado.')
+            .catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
         process.exit(1);
     }
 });

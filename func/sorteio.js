@@ -3,6 +3,18 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment-timezone');
 const { abrirConversa } = require('./funcoes.js');
+const chalk = require('chalk');
+
+function formatBox(title, lines) {
+  const width = Math.max(...lines.map(l => l.length));
+  console.log(chalk.blueBright('┌' + '─'.repeat(width + 2) + '┐'));
+  console.log(chalk.blueBright('│ ' + title.padEnd(width) + ' │'));
+  console.log(chalk.blueBright('├' + '─'.repeat(width + 2) + '┤'));
+  for (const line of lines) {
+    console.log(chalk.yellowBright('│ ' + line.padEnd(width) + ' │'));
+  }
+  console.log(chalk.blueBright('└' + '─'.repeat(width + 2) + '┘'));
+}
 
 // Defina o caminho para o arquivo JSON onde os sorteios serão armazenados
 const sorteiosPath = path.join(__dirname, '../db/sorteio/sorteio.json');
@@ -275,12 +287,20 @@ async function iniciarVerificacaoSorteiosAtivos() {
 
 client.on('vote_update', async (vote) => {
   console.log("Evento 'vote_update' acionado!");
+  console.log('VOTE UPDATE RAW:', JSON.stringify(vote, null, 2));
 
   const parent = vote.parentMessage;
   const pollIdBase =
     parent?.id?.id || parent?._data?.id?.id || null;
   const groupId = parent?.to || parent?._data?.to || null;
   const { voter, selectedOptions } = vote;
+
+  formatBox('VOTE UPDATE DETALHADO', [
+    `Grupo: ${groupId}`,
+    `Poll ID: ${pollIdBase}`,
+    `Votante: ${voter}`,
+    `Opções: ${selectedOptions.map(o => `${o.localId}-${o.name}`).join(', ')}`
+  ]);
 
   if (!pollIdBase || !groupId) return;
 

@@ -737,12 +737,15 @@ async function sendMessageReliable(client, chatId, content, options = {}) {
             console.warn('Cliente não conectado, mensagem não enviada.');
             return;
         }
-        return await client.sendMessage(chatId, content, options);
+        const result = await client.sendMessage(chatId, content, options);
+        console.log('sendMessageReliable result:', result);
     } catch (err) {
         if (err.message && err.message.includes('serialize')) {
             try {
                 await abrirConversa(chatId);
-                return await client.sendMessage(chatId, content, options);
+                const retryResult = await client.sendMessage(chatId, content, options);
+                console.log('sendMessageReliable retry result:', retryResult);
+                return;
             } catch (err2) {
                 console.error('Falha ao reabrir o chat e reenviar mensagem:', err2);
             }

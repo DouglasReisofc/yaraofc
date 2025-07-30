@@ -1592,13 +1592,15 @@ client.on('message', async (message) => {
         const pollMessage = await client.sendMessage(from, new Poll(tituloSorteio, options), {
           mentions: participants.map(p => `${p.id.user}@c.us`),
         });
+        console.log('Poll message result:', pollMessage);
 
-        sorteio.idMensagem = pollMessage.id._serialized;
-        criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollMessage.id._serialized);
+        const pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
+        sorteio.idMensagem = pollId;
+        criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollId);
         await abrirConversa(from);
 
         setTimeout(async () => {
-          const sorteioAtual = carregarSorteios().find(s => s.idMensagem === pollMessage.id._serialized);
+          const sorteioAtual = carregarSorteios().find(s => s.idMensagem === pollId);
 
         }, duracaoSorteio * 1000);
       }
@@ -3112,12 +3114,11 @@ Tempo ativo: ${uptime}
         return;
       }
 
-      const sentMessage = await client.sendMessage(from, "Pong... Calculando o ping...");
-
       const start = Date.now();
+      const result = await client.sendMessage(from, "Pong...");
+      console.log('Ping command result:', result);
       const pingTime = Date.now() - start;
-
-      await sentMessage.edit(`🏓 O ping do bot é: ${pingTime}ms`);
+      await client.sendMessage(from, `🏓 O ping do bot é: ${pingTime}ms`);
       break;
 
     case 'abrirchat':

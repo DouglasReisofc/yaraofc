@@ -53,6 +53,14 @@ const client = new Client({
     }
 });
 
+// Loga o retorno de todas as mensagens enviadas
+const originalSendMessage = client.sendMessage.bind(client);
+client.sendMessage = async (...args) => {
+    const result = await originalSendMessage(...args);
+    console.log('sendMessage returned:', result);
+    return result;
+};
+
 // 📌 Exibir QR Code no terminal
 client.on('qr', qr => {
     console.log(chalk.yellow('📲 Escaneie o QR Code abaixo para conectar-se ao bot:'));

@@ -706,35 +706,7 @@ async function abrirConversa(chatId) {
     }
 }
 
-async function sendMessageSafe(chatId, content, options = {}, openOnError = false) {
-    if (!chatId) {
-        console.error('sendMessageSafe: chatId indefinido');
-        return;
-    }
-    if (content === undefined || content === null) {
-        console.error(`sendMessageSafe: conteúdo indefinido para ${chatId}`);
-        return;
-    }
-
-    try {
-        const chat = await client.getChatById(chatId);
-        await chat.sendMessage(content, options);
-    } catch (error) {
-        if (openOnError && /serialize/i.test(error.message)) {
-            try {
-                await abrirConversa(chatId);
-                const chat = await client.getChatById(chatId);
-                await chat.sendMessage(content, options);
-                return;
-            } catch (err2) {
-                console.error(`Erro ao reenviar mensagem para ${chatId}:`, err2.message);
-            }
-        }
-        console.error(`Erro ao enviar mensagem para ${chatId}:`, error.message);
-    }
-}
-
-async function replySafe(message, content, options = {}, openOnError = false) {
+async function replySafe(message, content, options = {}) {
     if (!message || !message.from) {
         console.error('replySafe: mensagem inválida');
         return;
@@ -746,7 +718,11 @@ async function replySafe(message, content, options = {}, openOnError = false) {
             opts.quotedMessageId = quoted;
         }
     }
-    await sendMessageSafe(message.from, content, opts, openOnError);
+    try {
+        await client.sendMessage(message.from, content, opts);
+    } catch (error) {
+        console.error(`Erro ao enviar mensagem para ${message.from}:`, error.message);
+    }
 }
 
 
@@ -769,6 +745,5 @@ module.exports = {
     alterarBemVindo,
     obterConfiguracaoGrupo,
     abrirConversa,
-    sendMessageSafe,
     replySafe,
 };

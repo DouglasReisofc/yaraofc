@@ -58,7 +58,6 @@ const {
   upload,
   verificarAluguelAtivo,
   abrirConversa,
-  sendMessageSafe,
   replySafe
 } = require('./func/funcoes.js');
 const {
@@ -764,7 +763,7 @@ client.on('message', async (message) => {
   ${prefixo}tiktok
   ${prefixo}kwai`;
 
-      await sendMessageSafe(from, txtmenu, {}, true);
+      await client.sendMessage(from, txtmenu);
       break;
 
     case 'serverip':
@@ -3963,19 +3962,17 @@ ${mensagemGostoso}`);
         }
       }
 
-      await sendMessageSafe(from,
+      await client.sendMessage(from,
         `╭━━━[ *COMANDO INVALIDO* ]━━━╮
     |Data: *${dataFormatada}*
     |Grupo: *${nomeGrupoDefault}*
     | ID:(${idMensagem})
-    |        
+    |
     |*Número: ${author}*
     |        
     |Prefixo: *${config.prefixo}*
     |Exemplo: *${config.prefixo}menu*
-    ╰━━━━━━━━━━━━━━━━━━━━╯`,
-        {},
-        true
+    ╰━━━━━━━━━━━━━━━━━━━━╯`
       );
       break;
   }

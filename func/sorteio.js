@@ -140,6 +140,7 @@ async function finalizarSorteio(idGrupo) {
 
   if (sorteioIndex !== -1) {
     const sorteio = sorteios[sorteioIndex];
+    await abrirConversa(idGrupo);
     const { participantes, ganhadores } = sorteio;
 
     if (participantes.length < ganhadores) {

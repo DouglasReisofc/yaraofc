@@ -1580,8 +1580,10 @@ client.on('message', async (message) => {
       const pollOptions = ["Participar ❤️", "Não Participar 😬"];
 
       if (chat.isGroup) {
+        await abrirConversa(from);
         const poll = new Poll(tituloSorteio, pollOptions, { allowMultipleAnswers: false });
         const pollMessage = await client.sendMessage(from, poll);
+        await abrirConversa(from);
         const pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
         logPollEvent(pollId, chat.name);
         sorteio.idMensagem = pollId;

@@ -1547,18 +1547,18 @@ client.on('message', async (message) => {
 
       const sorteio = criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes);
 
-      const options = ["Participar ❤️", "Não Participar 😬"];
+      const pollOptions = ["Participar ❤️", "Não Participar 😬"];
 
       if (chat.isGroup) {
         const participants = chat.participants;
-        const pollMessage = await client.sendMessage(from, new Poll(tituloSorteio, options), {
-          mentions: participants.map(p => `${p.id.user}@c.us`),
+        const poll = new Poll(tituloSorteio, pollOptions, { allowMultipleAnswers: false });
+        const pollMessage = await client.sendMessage(from, poll, {
+          mentions: participants.map(p => p.id._serialized),
         });
         const pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
         logPollEvent(pollId, chat.name);
         sorteio.idMensagem = pollId;
         criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollId);
-        await abrirConversa(from);
 
         setTimeout(async () => {
           const sorteioAtual = carregarSorteios().find(s => s.idMensagem === pollId);

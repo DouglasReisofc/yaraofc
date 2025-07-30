@@ -37,6 +37,41 @@ const nomedoBot = config.nomeBot;
 const numerobot = config.numeroBot
 
 
+function formatBox(title, lines) {
+  const width = Math.max(...lines.map(l => l.length));
+  console.log(chalk.blueBright("┌" + "─".repeat(width + 2) + "┐"));
+  console.log(chalk.blueBright("│ " + title.padEnd(width) + " │"));
+  console.log(chalk.blueBright("├" + "─".repeat(width + 2) + "┤"));
+  lines.forEach(l => console.log(chalk.yellowBright("│ " + l.padEnd(width) + " │")));
+  console.log(chalk.blueBright("└" + "─".repeat(width + 2) + "┘"));
+}
+
+function logMessageDetails(msg, opts = {}) {
+  const lines = [];
+  lines.push(`🤖 Bot: ${nomedoBot}`);
+  lines.push(`✉️ Tipo: ${msg.type || 'Desconhecido'}`);
+  if (opts.pushName) lines.push(`👤 Usuário: ${opts.pushName}`);
+  if (opts.isGroup) {
+    lines.push(`👥 Grupo: ${opts.chatId}`);
+  } else {
+    lines.push(`📱 Remetente: ${opts.chatId}`);
+  }
+  if (opts.links) lines.push(`🔗 Links: ${opts.links}`);
+  lines.push(`🕒 Horário (SP): ${moment.tz(opts.timestamp * 1000, 'America/Sao_Paulo').format('DD/MM/YYYY HH:mm')}`);
+  if (opts.groupExpiry) lines.push(`🏁 Vencimento do Grupo: ${opts.groupExpiry}`);
+  lines.push(`💬 Conteúdo: ${msg.body.slice(0, 50)}`);
+  formatBox('DETALHES DA MENSAGEM', lines);
+}
+
+function logPollEvent(pollId, groupName) {
+  const lines = [
+    `📊 Enquete no grupo: ${groupName}`,
+    `🆔 ID: ${pollId}`,
+    `🕒 Horário (SP): ${moment.tz('America/Sao_Paulo').format('DD/MM/YYYY HH:mm')}`
+  ];
+  formatBox('ENQUETE CRIADA', lines);
+}
+
 const { startAdProcessing } = require('./func/ads.js');
 
 const {
@@ -449,36 +484,20 @@ client.on('message', async (message) => {
     return;
   }
 
-  console.log(chalk.blueBright('┌─────────────────────────────────────────┐'));
-  console.log(chalk.blueBright('│               DETALHES DA MENSAGEM      │'));
-  console.log(chalk.blueBright('├─────────────────────────────────────────┤'));
-  console.log(chalk.yellowBright(`│ BOT: ${nomedoBot}`));
-  console.log(chalk.yellowBright(`│ Tipo: ${message.type || 'Desconhecido'}`));
 
-  if (isGroup) {
-    console.log(chalk.yellowBright(`│ Tipo de Mensagem: Grupo`));
-    console.log(chalk.yellowBright(`│ ID do Grupo: ${remetente}`));
-  } else {
-    console.log(chalk.yellowBright(`│ Tipo de Mensagem: Privado`));
-    console.log(chalk.yellowBright(`│ Número do Remetente: ${remetente}`));
-
-    // 📌 Responder apenas uma vez no privado
-    if (!usuariosRespondidos.has(remetente)) {
-      let respostaPadrao = "🔹 Olá! Sou um robô automatizado para administração de grupos no WhatsApp.\n\n⚠️ Não sou responsável por nenhuma ação tomada no grupo, apenas obedeço comandos programados para auxiliar na moderação.\n\n📌 Se precisar de suporte ou resolver alguma questão, entre em contato com um administrador do grupo.\n\n🔹 Obrigado pela compreensão!";
-
-      try {
-        await client.sendMessage(remetente, respostaPadrao);
-        usuariosRespondidos.add(remetente);
-        console.log(chalk.greenBright(`✅ Resposta enviada para ${remetente}`));
-      } catch (error) {
-        console.error(`❌ Erro ao enviar mensagem para ${remetente}:`, error);
-      }
+  if (!isGroup && !usuariosRespondidos.has(remetente)) {
+    let respostaPadrao = "🔹 Olá! Sou um robô automatizado para administração de grupos no WhatsApp.\n\n⚠️ Não sou responsável por nenhuma ação tomada no grupo, apenas obedeço comandos programados para auxiliar na moderação.\n\n📌 Se precisar de suporte ou resolver alguma questão, entre em contato com um administrador do grupo.\n\n🔹 Obrigado pela compreensão!";
+    try {
+      await client.sendMessage(remetente, respostaPadrao);
+      usuariosRespondidos.add(remetente);
+      console.log(chalk.greenBright(`✅ Resposta enviada para ${remetente}`));
+    } catch (error) {
+      console.error(`❌ Erro ao enviar mensagem para ${remetente}:`, error);
     }
   }
-
-  console.log(chalk.greenBright(`│ Conteúdo: ${message.body.slice(0, 50)}`));
-  console.log(chalk.blueBright('└─────────────────────────────────────────┘'));
-
+  const pushName = message._data?.notifyName || message._data?.pushName || message._data?.sender?.pushname;
+  const linksFormatted = message.links && message.links.length > 0 ? message.links.map(l => l.link).join(', ') : '';
+  logMessageDetails(message, { pushName, isGroup, chatId: remetente, timestamp: message.timestamp, links: linksFormatted });
   // 📌 Processar comandos apenas se a mensagem começar com "!"
   if (message.body.startsWith("!")) {
     let command = message.body.split(" ")[0].toLowerCase();
@@ -606,65 +625,10 @@ client.on('message', async (message) => {
     }
   }
 
-  console.log(chalk.blueBright('┌─────────────────────────────────────────┐'));
-  console.log(chalk.blueBright('│               DETALHES DA MENSAGEM      │'));
-  console.log(chalk.blueBright('├─────────────────────────────────────────┤'));
-  console.log(chalk.yellowBright(`│ BOT: ${nomedoBot}`));
-  console.log(chalk.yellowBright(`│ Tipo: ${type || 'Desconhecido'}`));
-  console.log(chalk.yellowBright(`│ Links: ${links && links.length > 0 ? links.map(link => link.link).join(', ') : ' '}`));
-
-  if (isGroup) {
-    console.log(chalk.yellowBright(`│ Tipo de Mensagem: Grupo`));
-    console.log(chalk.yellowBright(`│ ID do Grupo: ${from}`));
-    let metadados = consultarMetadadoGrupo(from);
-
-    if (!metadados) {
-      console.log(chalk.yellow(`Metadados não encontrados para o grupo ${from}, criando...`));
-      const groupName = chat.name;
-      const groupAdmins = chat.groupMetadata ? chat.groupMetadata.participants.filter(p => p.isAdmin).map(admin => admin.id._serialized) : [];
-      const groupMembers = chat.participants.map(participant => participant.id._serialized);
-
-      const novosMetadados = {
-        groupId: from,
-        groupName: groupName,
-        admins: groupAdmins,
-        membros: groupMembers,
-      };
-
-      criarMetadadoGrupo(from, groupName, groupMembers, groupAdmins);
-      metadados = novosMetadados;
-      console.log(chalk.greenBright(`Metadados criados para o grupo: ${JSON.stringify(novosMetadados)}`));
-    } else {
-      console.log(chalk.greenBright(`│ Nome do Grupo: ${metadados.groupName || 'Sem nome'}`));
-      console.log(chalk.greenBright(`│ Membros do Grupo: ${metadados.membros.length}`));
-      console.log(chalk.greenBright(`│ Administradores do Grupo: ${metadados.admins.length}`));
-    }
-
-    let userType = 'Membro Comum';
-    if (isDono) {
-      userType = 'Dono';
-    } else if (isGroupAdmins) {
-      userType = 'Admin';
-    }
-
-    console.log(chalk.yellowBright(`│ Tipo de Usuário: ${userType}`));
-
-    let configuracaoGrupo = obterConfiguracaoGrupo(from);
-    if (!configuracaoGrupo) {
-      const groupName = chat.name;
-      criarConfiguracaoGrupo(from, groupName);
-      configuracaoGrupo = obterConfiguracaoGrupo(from);
-    }
-
-    console.log(chalk.yellowBright(`│ Número do Remetente: ${author || 'Desconhecido'}`));
-  } else {
-    console.log(chalk.yellowBright(`│ Tipo de Mensagem: Privado`));
-    console.log(chalk.yellowBright(`│ Número do Remetente: ${from || 'Desconhecido'}`));
-  }
-  const formattedTimestamp = new Date(timestamp * 1000).toLocaleString();
-  console.log(chalk.greenBright(`│ Timestamp: ${formattedTimestamp}`));
-  console.log(chalk.greenBright(`│ Conteúdo: ${body.slice(0, 50)}`));
-  console.log(chalk.blueBright('└─────────────────────────────────────────┘'));
+  const pushName = chat?.name || message._data?.notifyName || message._data?.pushName || message._data?.sender?.pushname;
+  const linksFormatted = links && links.length > 0 ? links.map(link => link.link).join(', ') : '';
+  const groupExpiryInfo = body.startsWith(config.prefixo) ? aluguelStatus.validade : null;
+  logMessageDetails(message, { pushName, isGroup, chatId: from, timestamp, links: linksFormatted, groupExpiry: groupExpiryInfo });
 
   if (isGroup) {
     await antilink(message);
@@ -1590,9 +1554,8 @@ client.on('message', async (message) => {
         const pollMessage = await client.sendMessage(from, new Poll(tituloSorteio, options), {
           mentions: participants.map(p => `${p.id.user}@c.us`),
         });
-        console.log('Poll message result:', pollMessage);
-
         const pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
+        logPollEvent(pollId, chat.name);
         sorteio.idMensagem = pollId;
         criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollId);
         await abrirConversa(from);

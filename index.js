@@ -207,6 +207,11 @@ client.on('group_participants.update', async (update) => {
   try {
     const grupoId = update.id; // Ex: 12036...@g.us
     const action = update.action;
+    const participantes = update.participants || [];
+
+    if (action === 'add') {
+      const configGrupo = await obterConfiguracaoGrupo(grupoId);
+
       // Verifica se o AutoBan está ativado para esse grupo
       if (configGrupo?.autoban === 1) {
         for (const participante of participantes) {
@@ -224,6 +229,7 @@ client.on('group_participants.update', async (update) => {
           }
         }
       }
+    }
   } catch (err) {
     console.error('[AutoBan] Erro geral no evento:', err.message);
   }

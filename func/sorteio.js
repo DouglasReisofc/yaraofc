@@ -39,6 +39,17 @@ function salvarSorteios(sorteios) {
 }
 
 /**
+ * Extrai apenas o ID da mensagem a partir de um ID serializado completo.
+ * @param {string} serializedId ID serializado (ex.: true_120@g.us_abcd1234)
+ * @returns {string|null} ID da mensagem ou null
+ */
+function extrairIdBasico(serializedId) {
+  if (typeof serializedId !== 'string') return null;
+  const partes = serializedId.split('_');
+  return partes.length >= 3 ? partes[2] : null;
+}
+
+/**
  * Cria ou atualiza um sorteio.
  * @param {string} idGrupo - ID do grupo no WhatsApp.
  * @param {string} titulo - Título do sorteio.
@@ -266,15 +277,16 @@ client.on('vote_update', async (vote) => {
   console.log("Evento 'vote_update' acionado!");
 
   const parent = vote.parentMessage;
-  const pollId =
-    parent?.id?._serialized || parent?._data?.id?._serialized || null;
+  const pollIdBase =
+    parent?.id?.id || parent?._data?.id?.id || null;
   const groupId = parent?.to || parent?._data?.to || null;
   const { voter, selectedOptions } = vote;
 
-  if (!pollId || !groupId) return;
+  if (!pollIdBase || !groupId) return;
 
   const sorteioAtivo = await verificarSorteioAtivo(groupId);
-  if (!sorteioAtivo || pollId !== sorteioAtivo.idMensagem) {
+  const sorteioBaseId = extrairIdBasico(sorteioAtivo?.idMensagem);
+  if (!sorteioAtivo || pollIdBase !== sorteioBaseId) {
     return;
   }
 

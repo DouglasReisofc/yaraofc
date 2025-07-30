@@ -290,8 +290,9 @@ client.on('vote_update', async (vote) => {
   console.log('VOTE UPDATE RAW:', JSON.stringify(vote, null, 2));
 
   const parent = vote.parentMessage;
-  const pollIdBase =
-    parent?.id?.id || parent?._data?.id?.id || null;
+  const pollSerialized =
+    parent?.id?._serialized || parent?._data?.id?._serialized || null;
+  const pollIdBase = extrairIdBasico(pollSerialized);
   const groupId = parent?.to || parent?._data?.to || null;
   const { voter, selectedOptions } = vote;
 
@@ -311,14 +312,17 @@ client.on('vote_update', async (vote) => {
   }
 
   if (selectedOptions.length === 0) {
+    console.log(`Participante ${voter} removeu o voto no sorteio ${groupId}`);
     removerParticipante(groupId, voter);
   } else {
     const option = selectedOptions[0];
     switch (option.localId) {
       case 0:
+        console.log(`Adicionando participante ${voter} ao sorteio ${groupId}`);
         adicionarParticipante(groupId, voter);
         break;
       case 1:
+        console.log(`Removendo participante ${voter} do sorteio ${groupId}`);
         removerParticipante(groupId, voter);
         break;
     }

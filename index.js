@@ -77,27 +77,6 @@ const {
   iniciarVerificacaoSorteiosAtivos
 } = require('./func/sorteio.js');
 
-// Envia mensagens abrindo a conversa automaticamente se houver erro de
-// serialização ao acessar o modelo da mensagem.
-const originalSendMessage = client.sendMessage.bind(client);
-client.sendMessage = async (chatId, content, options = {}) => {
-  try {
-    return await originalSendMessage(chatId, content, options);
-  } catch (err) {
-    if (/serialize/i.test(err.message)) {
-      try {
-        await abrirConversa(chatId);
-        const chat = await client.getChatById(chatId);
-        return await chat.sendMessage(content, options);
-      } catch (inner) {
-        console.error('Erro ao reenviar mensagem após abrir conversa:', inner);
-        throw err;
-      }
-    }
-    throw err;
-  }
-};
-
 const mimeTypes = [
   { formato: 'pdf', link: 'application/pdf' },
   { formato: 'xml', link: 'application/octet-stream' },

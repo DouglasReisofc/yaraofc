@@ -261,7 +261,7 @@ client.on('group_join', async (notification) => {
 
   try {
 
-    const chat = await client.getChat(groupId);
+    const chat = await client.getChatById(groupId);
     const groupName = chat.name;
     const configuracaoGrupo = await obterDadosBoasVindasESaida(groupId);
 
@@ -329,7 +329,7 @@ client.on('message_reaction', async (reaction) => {
   let chatName;
   if (chatId) {
     try {
-      const chat = await client.getChat(chatId);
+      const chat = await client.getChatById(chatId);
       chatName = chat?.name;
     } catch (err) {
       console.error('Erro ao obter chat para reação:', err.message);
@@ -362,7 +362,7 @@ app.post('/send-group-message', async (req, res) => {
   }
 
   try {
-    const chat = await client.getChat(groupId);
+    const chat = await client.getChatById(groupId);
 
     if (chat.isGroup) {
       const participants = chat.participants;
@@ -459,7 +459,7 @@ app.post('/groups/join-and-info', async (req, res) => {
     } else if (groupId) {
       finalGroupId = groupId;
     }
-    const groupInfo = await client.getChat(finalGroupId);
+    const groupInfo = await client.getChatById(finalGroupId);
     const groupProfilePicUrl = await client.getProfilePicUrl(finalGroupId);
 
     const response = {
@@ -548,7 +548,7 @@ client.on('message', async (message) => {
   const donoComSuFixo = `${config.numeroDono}@c.us`;
   const isGroup = from.endsWith('@g.us');
 
-  const chat = await client.getChat(from);
+  const chat = await client.getChatById(from);
 
   await chat.sendSeen();
 

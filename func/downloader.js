@@ -21,7 +21,7 @@ if (!fs.existsSync(tmpFolder)) {
 // Função para processar mídias do TikTok (vídeo e imagens)
 const processTikTokMedia = async (link, chatId) => {
     try {
-        const chat = await client.getChat(chatId);
+        const chat = await client.getChatById(chatId);
         
         // Enviar status "digitando"
         chat.sendStateTyping();
@@ -85,7 +85,7 @@ const processTikTokMedia = async (link, chatId) => {
 
 const processKwaiMedia = async (link, chatId) => {
     try {
-        const chat = await client.getChat(chatId);
+        const chat = await client.getChatById(chatId);
 
         // Enviar status "digitando"
         chat.sendStateTyping();
@@ -141,7 +141,7 @@ const processKwaiMedia = async (link, chatId) => {
 
 const downloadVideoFromYouTube = async (query, chatId) => {
     try {
-        const chat = await client.getChat(chatId);
+        const chat = await client.getChatById(chatId);
         chat.sendStateTyping();
 
         console.log("🔄 Realizando busca do vídeo...");
@@ -218,7 +218,7 @@ Para baixar o áudio, digite:
 
 const downloadAudioFromYouTube = async (query, chatId) => {
     try {
-        const chat = await client.getChat(chatId);
+        const chat = await client.getChatById(chatId);
         chat.sendStateTyping();
 
         console.log("🔄 Iniciando a extração de áudio...");

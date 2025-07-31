@@ -1685,8 +1685,31 @@ client.on('message', async (message) => {
           from,
           `🎉 *${tituloSorteio2}* 🎉\n\nReaja a esta mensagem com qualquer emoji para participar do sorteio.`
         );
-        const msgId = mensagem?.id?._serialized || null;
-        criarSorteio(from, tituloSorteio2, duracaoSorteio2, numGanhadores2, limiteParticipantes2, msgId);
+        let msgId = mensagem?.id?._serialized || null;
+
+        // Garante que o ID da mensagem enviada foi obtido
+        if (!msgId) {
+          try {
+            const msgs = await chat.fetchMessages({ limit: 5 });
+            const msg = msgs.find(
+              (m) => m.fromMe && m.body && m.body.includes(tituloSorteio2)
+            );
+            if (msg) {
+              msgId = msg.id._serialized;
+            }
+          } catch (err) {
+            console.error('Erro ao obter ID da mensagem do sorteio2:', err);
+          }
+        }
+
+        criarSorteio(
+          from,
+          tituloSorteio2,
+          duracaoSorteio2,
+          numGanhadores2,
+          limiteParticipantes2,
+          msgId
+        );
 
         setTimeout(async () => {
           const sorteioAtual = carregarSorteios().find((s) => s.idMensagem === msgId);

@@ -9,14 +9,18 @@ const config = require('./dono/config.json');
 
 
 let chromePath = '/usr/bin/chromium-browser';
+let userDataDir = null;
 
 if (os.platform() === 'win32') {
     chromePath = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 } else if (os.platform() === 'linux') {
     if (fs.existsSync('/usr/bin/brave-browser')) {
         chromePath = '/usr/bin/brave-browser';
-    } else if (fs.existsSync('/home/douglas/.config/chromium')) {
-        chromePath = '/home/douglas/.config/chromium';
+    } else if (fs.existsSync('/usr/bin/google-chrome')) {
+        chromePath = '/usr/bin/google-chrome';
+    }
+    if (fs.existsSync('/home/douglas/.config/chromium')) {
+        userDataDir = '/home/douglas/.config/chromium';
     }
 }
 
@@ -33,7 +37,8 @@ const client = new Client({
     }),
     puppeteer: {
         executablePath: chromePath,
-        headless: false,
+        headless: true,
+        userDataDir: userDataDir || undefined,
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
@@ -44,8 +49,12 @@ const client = new Client({
             "--disable-gpu",
             "--disable-session-crashed-bubble",
             "--disable-infobars",
-            "--disable-features=site-per-process",
+            "--disable-features=site-per-process,TranslateUI",
             "--disable-blink-features=AutomationControlled",
+            "--disable-background-timer-throttling",
+            "--disable-renderer-backgrounding",
+            "--disable-backgrounding-occluded-windows",
+            "--single-process",
             `--proxy-bypass-list=<-loopback>`
         ],
         ignoreHTTPSErrors: true,

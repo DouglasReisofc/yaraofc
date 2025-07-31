@@ -2804,12 +2804,10 @@ client.on('message', async (message) => {
       if (ativarNotificacoes) {
         const dadosAtuais = await getHorapg(grupoIdAtivar);
         const intervalo = dadosAtuais?.intervalo_horapg || '5m';
-        const imagem = dadosAtuais?.imagem_horapg;
 
         await storeHorapg(grupoIdAtivar, {
           horapg: true,
-          intervalo_horapg: intervalo,
-          imagem_horapg: imagem
+          intervalo_horapg: intervalo
         });
         await updateLastSent(grupoIdAtivar);
       } else {
@@ -2851,8 +2849,7 @@ client.on('message', async (message) => {
 
       await storeHorapg(grupoIdHorarios, {
         horapg: dadosAtuais?.horapg || false,
-        intervalo_horapg: intervaloArgumento,
-        imagem_horapg: dadosAtuais?.imagem_horapg
+        intervalo_horapg: intervaloArgumento
       });
 
       await client.sendMessage(grupoIdHorarios, `✅ Intervalo de notificações ajustado para ${intervaloArgumento}. Para ativar ou desativar as notificações automáticas, use ${prefixo}horapg`);
@@ -2936,21 +2933,26 @@ client.on('message', async (message) => {
       }
 
       try {
-        const fileLink = await upload(imageHorarios);
         const groupJid = message.from;
 
         const dadosAtuais = await getHorapg(groupJid);
 
-        await storeHorapg(groupJid, {
+        const resultado = await storeHorapg(groupJid, {
           horapg: dadosAtuais?.horapg || false,
           intervalo_horapg: dadosAtuais?.intervalo_horapg || '5m',
-          imagem_horapg: fileLink
+          imagem_horapg: imageHorarios
         });
 
-        const mediaMessage = await MessageMedia.fromUrl(fileLink);
-        await client.sendMessage(message.from, mediaMessage, {
-          caption: `Nova imagem do comando ${prefixo}horarios  foi definida`
-        });
+        const imagemFinal = resultado?.settings?.imagem_horapg;
+
+        if (imagemFinal) {
+          const mediaMessage = await MessageMedia.fromUrl(imagemFinal);
+          await client.sendMessage(message.from, mediaMessage, {
+            caption: `Nova imagem do comando ${prefixo}horarios  foi definida`
+          });
+        } else {
+          await client.sendMessage(from, 'Imagem atualizada com sucesso.');
+        }
 
       } catch (err) {
         await client.sendMessage(from, `❌ Erro ao fazer upload da imagem: ${err.message}`);

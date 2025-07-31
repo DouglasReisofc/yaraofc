@@ -5,6 +5,7 @@ const fs = require('fs');
 const client = require('../client.js');
 const path = require('path');
 const { MessageMedia } = require('whatsapp-web.js');
+const FormData = require('form-data');
 
 const siteapi = config.siteapi;
 const numerobot = config.numeroBot;
@@ -25,16 +26,34 @@ async function fetchHorapgFromAPI() {
 
 async function storeHorapg(groupJid, data = {}) {
     try {
-        const payload = { ...data };
-        if (payload.imagem) {
-            payload.imagem_horapg = payload.imagem;
-            delete payload.imagem;
-        }
         const encoded = encodeURIComponent(groupJid);
-        await axios.post(`${siteapi}/group/${encoded}/horapg`, payload);
-        return true;
+
+        // Se imagem_horapg possuir dados de mídia, envia como multipart
+        if (data.imagem_horapg && data.imagem_horapg.data) {
+            const form = new FormData();
+            form.append('horapg', data.horapg);
+            form.append('intervalo_horapg', data.intervalo_horapg);
+
+            const buffer = Buffer.from(data.imagem_horapg.data, 'base64');
+            const ext = data.imagem_horapg.mimetype?.split('/')[1] || 'jpg';
+            form.append(
+                'imagem_horapg',
+                buffer,
+                { filename: `horapg.${ext}`, contentType: data.imagem_horapg.mimetype || 'image/jpeg' }
+            );
+
+            const res = await axios.post(`${siteapi}/group/${encoded}/horapg`, form, {
+                headers: form.getHeaders(),
+            });
+            return res.data;
+        } else {
+            const payload = { ...data };
+            delete payload.imagem_horapg;
+            const res = await axios.post(`${siteapi}/group/${encoded}/horapg`, payload);
+            return res.data;
+        }
     } catch (err) {
-        return false;
+        return null;
     }
 }
 

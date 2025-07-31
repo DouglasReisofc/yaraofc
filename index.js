@@ -128,7 +128,8 @@ const {
   verificarSorteioAtivo,
   carregarSorteios,
   verificarSorteiosAtivos,
-  iniciarVerificacaoSorteiosAtivos
+  iniciarVerificacaoSorteiosAtivos,
+  obterIdCompleto
 } = require('./func/sorteio.js');
 
 const mimeTypes = [
@@ -1577,7 +1578,7 @@ client.on('message', async (message) => {
         const pollMessage = await client.sendMessage(from, poll);
         await abrirConversa(from);
 
-        let pollId = pollMessage?.id?._serialized || null;
+        let pollId = obterIdCompleto(pollMessage);
 
         // Garante que o ID da enquete foi obtido corretamente
         if (!pollId) {
@@ -1585,7 +1586,7 @@ client.on('message', async (message) => {
             const msgs = await chat.fetchMessages({ limit: 5 });
             const pollMsg = msgs.find(m => m.type === 'poll_creation' && m.fromMe);
             if (pollMsg) {
-              pollId = pollMsg.id._serialized;
+              pollId = obterIdCompleto(pollMsg);
             }
           } catch (err) {
             console.error('Erro ao buscar ID da enquete:', err);
@@ -1600,11 +1601,6 @@ client.on('message', async (message) => {
 
         logPollEvent(pollId, chat.name);
         criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollId);
-
-        setTimeout(async () => {
-          const sorteioAtual = carregarSorteios().find(s => s.idMensagem === pollId);
-
-        }, duracaoSorteio * 1000);
       }
       break;
 
@@ -1693,7 +1689,7 @@ client.on('message', async (message) => {
           from,
           `🎉 *${tituloSorteio2}* 🎉\n\nReaja a esta mensagem com qualquer emoji para participar do sorteio.`
         );
-        let msgId = mensagem?.id?._serialized || mensagem?.id?.id || null;
+        let msgId = obterIdCompleto(mensagem);
 
         // Garante que o ID da mensagem enviada foi obtido
         if (!msgId) {
@@ -1703,7 +1699,7 @@ client.on('message', async (message) => {
               (m) => m.fromMe && m.body && m.body.includes(tituloSorteio2)
             );
             if (msg) {
-              msgId = msg.id._serialized || msg.id.id;
+              msgId = obterIdCompleto(msg);
             }
           } catch (err) {
             console.error('Erro ao obter ID da mensagem do sorteio2:', err);
@@ -1725,9 +1721,6 @@ client.on('message', async (message) => {
           msgId
         );
 
-        setTimeout(async () => {
-          const sorteioAtual = carregarSorteios().find((s) => s.idMensagem === msgId);
-        }, duracaoSorteio2 * 1000);
       }
 
       break;

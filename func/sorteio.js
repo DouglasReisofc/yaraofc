@@ -67,6 +67,23 @@ function extrairIdBasico(serializedId) {
 }
 
 /**
+ * Obtém de forma resiliente o ID completo de uma mensagem retornada pela API.
+ * Alguns métodos podem não expor diretamente o campo `_serialized`.
+ * @param {object} msg Mensagem retornada pela API
+ * @returns {string|null} ID completo ou null
+ */
+function obterIdCompleto(msg) {
+  if (!msg) return null;
+  return (
+    msg.id?._serialized ||
+    msg.id?.id ||
+    msg._data?.id?._serialized ||
+    msg._data?.id?.id ||
+    null
+  );
+}
+
+/**
  * Cria ou atualiza um sorteio.
  * @param {string} idGrupo - ID do grupo no WhatsApp.
  * @param {string} titulo - Título do sorteio.
@@ -315,8 +332,7 @@ client.on('vote_update', async (vote) => {
   console.log('VOTE UPDATE RAW:', JSON.stringify(vote, null, 2));
 
   const parent = vote.parentMessage;
-  const pollSerialized =
-    parent?.id?._serialized || parent?._data?.id?._serialized || null;
+  const pollSerialized = obterIdCompleto(parent);
   const pollIdBase = extrairIdBasico(pollSerialized);
   const groupId = parent?.to || parent?._data?.to || null;
   const { voter, selectedOptions } = vote;
@@ -375,11 +391,8 @@ client.on('message_reaction', async (reaction) => {
   console.log('REACTION RAW:', JSON.stringify(reaction, null, 2));
 
   const serialized =
-    reaction.msgId?._serialized ||
-    reaction.msgId?.id ||
-    reaction.id?._serialized ||
-    reaction.id?.id ||
-    null;
+    obterIdCompleto(reaction.msgId) ||
+    obterIdCompleto(reaction.id);
   const messageId = extrairIdBasico(serialized);
   const groupId = reaction.msgId?.remote || reaction.id?.remote || null;
   const participante = reaction.senderId;
@@ -423,5 +436,6 @@ module.exports = {
   verificarSorteioAtivo,
   iniciarVerificacaoSorteiosAtivos,
   carregarSorteios,
-  extrairIdBasico
+  extrairIdBasico,
+  obterIdCompleto
 };

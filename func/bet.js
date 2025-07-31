@@ -208,7 +208,7 @@ async function verificarHorariosEEnviarMensagens() {
         }
 
         try {
-            if (registro.horapg && registro.intervalo_horapg) {
+            if ((registro.horapg === 1 || registro.horapg === '1') && registro.intervalo_horapg) {
                 const intervaloMs = converterIntervaloParaMs(registro.intervalo_horapg);
                 if (intervaloMs === null) continue;
 

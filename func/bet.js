@@ -11,9 +11,9 @@ const numerobot = config.numeroBot;
 
 async function fetchHorapgFromAPI() {
     try {
-        const response = await axios.get(`${siteapi}/horapg/bot/${numerobot}`);
-        if (response.data && Array.isArray(response.data.horapg)) {
-            return response.data.horapg;
+        const response = await axios.get(`${siteapi}/group/horapg`);
+        if (response.data && Array.isArray(response.data.data)) {
+            return response.data.data;
         }
     } catch (error) {
         // erro silencioso
@@ -165,22 +165,22 @@ async function verificarHorariosEEnviarMensagens() {
     const registros = await fetchHorapgFromAPI();
 
     for (const registro of registros) {
-        const grupoId = registro.group_identifier;
+        const grupoId = registro.group_id;
         if (!grupoId) continue;
 
-        if (registro.ativado && registro.intervalo) {
-            const intervaloMs = converterIntervaloParaMs(registro.intervalo);
+        if (registro.horapg && registro.intervalo_horapg) {
+            const intervaloMs = converterIntervaloParaMs(registro.intervalo_horapg);
             if (intervaloMs === null) continue;
 
-            const ultimaNotificacao = registro.last_sent_at
-                ? moment.tz(registro.last_sent_at, 'America/Sao_Paulo').valueOf()
+            const ultimaNotificacao = registro.ultimo_envio_horapg
+                ? moment.tz(registro.ultimo_envio_horapg, 'America/Sao_Paulo').valueOf()
                 : null;
 
             if (!ultimaNotificacao || (timestampAtual - ultimaNotificacao) >= intervaloMs) {
                 const horarioAtual = obterHorarioAtual();
                 const mensagem = buscarHorarios(horarioAtual);
 
-                const imagemUrl = registro.imagem || registro.imagem_url || defaultImage;
+                const imagemUrl = registro.imagem_horapg || defaultImage;
 
                 if (mensagem) {
                     try {

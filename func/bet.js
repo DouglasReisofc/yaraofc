@@ -23,39 +23,43 @@ async function fetchHorapgFromAPI() {
     return [];
 }
 
-async function storeHorapg(groupId, data = {}) {
+async function storeHorapg(groupJid, data = {}) {
     try {
         const payload = { ...data };
         if (payload.imagem) {
             payload.imagem_horapg = payload.imagem;
             delete payload.imagem;
         }
-        await axios.post(`${siteapi}/group/${groupId}/horapg`, payload);
+        const encoded = encodeURIComponent(groupJid);
+        await axios.post(`${siteapi}/group/${encoded}/horapg`, payload);
         return true;
     } catch (err) {
         return false;
     }
 }
 
-async function updateLastSent(groupId) {
+async function updateLastSent(groupJid) {
     try {
-        await axios.patch(`${siteapi}/group/${groupId}/horapg/last-sent`);
+        const encoded = encodeURIComponent(groupJid);
+        await axios.patch(`${siteapi}/group/${encoded}/horapg/last-sent`);
     } catch (err) {
         // erro silencioso
     }
 }
 
-async function deleteHorapg(groupId) {
+async function deleteHorapg(groupJid) {
     try {
-        await axios.delete(`${siteapi}/group/${groupId}/horapg`);
+        const encoded = encodeURIComponent(groupJid);
+        await axios.delete(`${siteapi}/group/${encoded}/horapg`);
     } catch (err) {
         // erro silencioso
     }
 }
 
-async function getHorapg(groupId) {
+async function getHorapg(groupJid) {
     try {
-        const response = await axios.get(`${siteapi}/group/${groupId}/horapg`);
+        const encoded = encodeURIComponent(groupJid);
+        const response = await axios.get(`${siteapi}/group/${encoded}/horapg`);
         if (response.data && response.data.settings) {
             return response.data.settings;
         }
@@ -170,8 +174,8 @@ async function verificarHorariosEEnviarMensagens() {
     const registros = await fetchHorapgFromAPI();
 
     for (const registro of registros) {
-        const grupoId = registro.group_id;
-        if (!grupoId) continue;
+        const grupoJid = registro.group_id;
+        if (!grupoJid) continue;
 
         if (registro.horapg && registro.intervalo_horapg) {
             const intervaloMs = converterIntervaloParaMs(registro.intervalo_horapg);
@@ -190,24 +194,24 @@ async function verificarHorariosEEnviarMensagens() {
                 if (mensagem) {
                     try {
                         const media = await MessageMedia.fromUrl(imagemUrl);
-                        await client.sendMessage(grupoId, media, { caption: mensagem });
+                        await client.sendMessage(grupoJid, media, { caption: mensagem });
                     } catch (err) {
                         try {
                             const media = await MessageMedia.fromUrl(defaultImage);
-                            await client.sendMessage(grupoId, media, { caption: mensagem });
+                            await client.sendMessage(grupoJid, media, { caption: mensagem });
                         } catch (fallbackErr) {
                             // falha silenciosa
                         }
                     }
                 } else {
                     try {
-                        await client.sendMessage(grupoId, "_❲❗❳   Desculpe, Sem Horário Atualmente_");
+                        await client.sendMessage(grupoJid, "_❲❗❳   Desculpe, Sem Horário Atualmente_");
                     } catch (err) {
                         // erro silencioso
                     }
                 }
 
-                await updateLastSent(grupoId);
+                await updateLastSent(grupoJid);
 
                 await sleep(2000);
             }

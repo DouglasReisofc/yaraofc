@@ -4006,22 +4006,13 @@ ${mensagemGostoso}`);
 
       const chatDefault = await message.getChat();
       const nomeGrupoDefault = chatDefault.isGroup ? chatDefault.name : 'Não é um grupo';
-      const idGrupoDefault = chatDefault.isGroup ? chatDefault.id._serialized : 'Não é um grupo';
-
-      let idMensagem = 'Indisponível';
-      if (message.id) {
-        if (typeof message.id === 'object') {
-          idMensagem = message.id._serialized || message.id.id || idMensagem;
-        } else {
-          idMensagem = message.id;
-        }
-      }
+      const jidDestino = chatDefault.id._serialized;
 
       await client.sendMessage(from,
         `╭━━━[ *COMANDO INVALIDO* ]━━━╮
     |Data: *${dataFormatada}*
     |Grupo: *${nomeGrupoDefault}*
-    | ID:(${idMensagem})
+    | ID:(${jidDestino})
     |
     |*Número: ${author}*
     |        

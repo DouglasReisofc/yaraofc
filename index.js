@@ -1693,7 +1693,7 @@ client.on('message', async (message) => {
           from,
           `🎉 *${tituloSorteio2}* 🎉\n\nReaja a esta mensagem com qualquer emoji para participar do sorteio.`
         );
-        let msgId = mensagem?.id?._serialized || null;
+        let msgId = mensagem?.id?._serialized || mensagem?.id?.id || null;
 
         // Garante que o ID da mensagem enviada foi obtido
         if (!msgId) {
@@ -1703,7 +1703,7 @@ client.on('message', async (message) => {
               (m) => m.fromMe && m.body && m.body.includes(tituloSorteio2)
             );
             if (msg) {
-              msgId = msg.id._serialized;
+              msgId = msg.id._serialized || msg.id.id;
             }
           } catch (err) {
             console.error('Erro ao obter ID da mensagem do sorteio2:', err);

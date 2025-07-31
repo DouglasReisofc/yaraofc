@@ -374,7 +374,12 @@ client.on('message_reaction', async (reaction) => {
   console.log("Evento 'message_reaction' acionado!");
   console.log('REACTION RAW:', JSON.stringify(reaction, null, 2));
 
-  const serialized = reaction.msgId?._serialized || reaction.id?._serialized || null;
+  const serialized =
+    reaction.msgId?._serialized ||
+    reaction.msgId?.id ||
+    reaction.id?._serialized ||
+    reaction.id?.id ||
+    null;
   const messageId = extrairIdBasico(serialized);
   const groupId = reaction.msgId?.remote || reaction.id?.remote || null;
   const participante = reaction.senderId;

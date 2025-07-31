@@ -12,13 +12,16 @@ let chromePath = '/usr/bin/chromium-browser';
 let userDataDir = null;
 
 if (os.platform() === 'win32') {
-    chromePath = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
-} else if (os.platform() === 'linux') {
-    if (fs.existsSync('/usr/bin/brave-browser')) {
-        chromePath = '/usr/bin/brave-browser';
-    } else if (fs.existsSync('/usr/bin/google-chrome')) {
+    // Usa o executável do Chrome no Windows
+    chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+} else {
+    // Em Linux, tenta primeiro o Google Chrome, depois o Chromium
+    if (fs.existsSync('/usr/bin/google-chrome')) {
         chromePath = '/usr/bin/google-chrome';
+    } else if (fs.existsSync('/usr/bin/chromium-browser')) {
+        chromePath = '/usr/bin/chromium-browser';
     }
+    // Configura perfil do Chromium, se existir
     if (fs.existsSync('/home/douglas/.config/chromium')) {
         userDataDir = '/home/douglas/.config/chromium';
     }

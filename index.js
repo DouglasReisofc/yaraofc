@@ -2788,7 +2788,13 @@ client.on('message', async (message) => {
         });
         await updateLastSent(grupoIdAtivar);
       } else {
-        await deleteHorapg(grupoIdAtivar);
+        const dadosAtuais = await getHorapg(grupoIdAtivar);
+        const intervalo = dadosAtuais?.intervalo_horapg || '5m';
+
+        await storeHorapg(grupoIdAtivar, {
+          horapg: false,
+          intervalo_horapg: intervalo
+        });
       }
 
       await client.sendMessage(grupoIdAtivar, `✅ Notificações ${ativarNotificacoes ? 'ativadas' : 'desativadas'} para este grupo.\nUse o comando ${prefixo}addhorapg 5m para adicionar o intervalo de tempo que cada horario será enviado.`);

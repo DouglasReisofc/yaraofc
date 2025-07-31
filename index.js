@@ -1686,11 +1686,32 @@ client.on('message', async (message) => {
 
       if (chat.isGroup) {
         await abrirConversa(from);
-        const mensagem = await client.sendMessage(
-          from,
-          `🎉 *${tituloSorteio2}* 🎉\n\nReaja a esta mensagem com qualquer emoji para participar do sorteio.`
-        );
-        let msgId = obterIdCompleto(mensagem);
+
+        const textoSorteio =
+          `🎉 *${tituloSorteio2}* 🎉\n\nReaja a esta mensagem com qualquer emoji para participar do sorteio.`;
+
+        let resolverId;
+        const idPromise = new Promise((resolve) => {
+          resolverId = resolve;
+          const handler = (msg) => {
+            if (msg.fromMe && msg.to === from && msg.body === textoSorteio) {
+              client.off('message_create', handler);
+              resolve(obterIdCompleto(msg));
+            }
+          };
+          client.on('message_create', handler);
+          setTimeout(() => {
+            client.off('message_create', handler);
+            resolve(null);
+          }, 4000);
+        });
+
+        const mensagem = await client.sendMessage(from, textoSorteio);
+
+        let msgId = await idPromise;
+        if (!msgId) {
+          msgId = obterIdCompleto(mensagem);
+        }
 
         // Garante que o ID final da mensagem enviada foi obtido
         if (!msgId) {

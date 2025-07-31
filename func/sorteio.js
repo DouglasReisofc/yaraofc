@@ -90,7 +90,12 @@ function obterIdCompleto(msg) {
     return obj.id || null;
   };
 
-  return compose(msg.id) || compose(msg._data?.id) || null;
+  return (
+    compose(msg.id) ||
+    compose(msg._data?.id) ||
+    compose(msg) ||
+    null
+  );
 }
 
 /**

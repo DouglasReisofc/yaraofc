@@ -2888,7 +2888,7 @@ client.on('message', async (message) => {
       const defaultImage =
         'https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg';
 
-      let imagemUrl = dadosHorapg?.imagem || dadosHorapg?.imagem_url || defaultImage;
+      let imagemUrl = dadosHorapg?.imagem_horapg || defaultImage;
 
       try {
         const media = await MessageMedia.fromUrl(imagemUrl);

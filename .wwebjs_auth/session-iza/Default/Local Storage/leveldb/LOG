@@ -1,6 +1,0 @@
-2025/07/31-17:54:09.272 cebd2 Reusing MANIFEST /home/douglas/yaraofc/.wwebjs_auth/session-iza/Default/Local Storage/leveldb/MANIFEST-000001
-2025/07/31-17:54:09.273 cebd2 Recovering log #23
-2025/07/31-17:54:09.274 cebd2 Reusing old log /home/douglas/yaraofc/.wwebjs_auth/session-iza/Default/Local Storage/leveldb/000023.log 
-2025/07/31-20:14:26.967 cebd3 Level-0 table #27: started
-2025/07/31-20:14:26.972 cebd3 Level-0 table #27: 13223 bytes OK
-2025/07/31-20:14:26.974 cebd3 Delete type=0 #23

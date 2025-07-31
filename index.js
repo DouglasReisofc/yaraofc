@@ -1,6 +1,5 @@
 const client = require('./client.js');
-const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
-const Poll = require('whatsapp-web.js').Poll;
+const { MessageMedia, Poll } = require('whatsapp-web.js');
 const express = require('express');
 const socketIO = require('socket.io');
 const http = require('http');
@@ -37,6 +36,61 @@ const apikeysite = config.apikeysite;
 const nomedoBot = config.nomeBot;
 const numerobot = config.numeroBot
 
+// Mensagem padrão para respostas privadas e recusas de chamada
+const mensagemPadraoPV =
+  "🔹 Olá! Sou um robô automatizado para administração de grupos no WhatsApp.\n\n" +
+  "⚠️ Não sou responsável por nenhuma ação tomada no grupo, apenas obedeço comandos programados para auxiliar na moderação.\n\n" +
+  "📌 Se precisar de suporte ou resolver alguma questão, entre em contato com um administrador do grupo.\n\n" +
+  "🔹 Obrigado pela compreensão!";
+
+
+function formatBox(title, lines) {
+  const width = Math.max(...lines.map(l => l.length));
+  console.log(chalk.blueBright("┌" + "─".repeat(width + 2) + "┐"));
+  console.log(chalk.blueBright("│ " + title.padEnd(width) + " │"));
+  console.log(chalk.blueBright("├" + "─".repeat(width + 2) + "┤"));
+  lines.forEach(l => console.log(chalk.yellowBright("│ " + l.padEnd(width) + " │")));
+  console.log(chalk.blueBright("└" + "─".repeat(width + 2) + "┘"));
+}
+
+function logMessageDetails(msg, opts = {}) {
+  const lines = [];
+  lines.push(`🤖 Bot: ${nomedoBot}`);
+  lines.push(`✉️ Tipo: ${msg.type || 'Desconhecido'}`);
+  if (opts.pushName) lines.push(`👤 Usuário: ${opts.pushName}`);
+  if (opts.isGroup) {
+    lines.push(`👥 Grupo: ${opts.chatId}`);
+  } else {
+    lines.push(`📱 Remetente: ${opts.chatId}`);
+  }
+  if (opts.links) lines.push(`🔗 Links: ${opts.links}`);
+  lines.push(`🕒 Horário (SP): ${moment.tz(opts.timestamp * 1000, 'America/Sao_Paulo').format('DD/MM/YYYY HH:mm')}`);
+  if (opts.groupExpiry) lines.push(`🏁 Vencimento do Grupo: ${opts.groupExpiry}`);
+  lines.push(`💬 Conteúdo: ${msg.body.slice(0, 50)}`);
+  formatBox('DETALHES DA MENSAGEM', lines);
+}
+
+function logPollEvent(pollId, groupName) {
+  const lines = [
+    `📊 Enquete no grupo: ${groupName}`,
+    `🆔 ID: ${pollId}`,
+    `🕒 Horário (SP): ${moment.tz('America/Sao_Paulo').format('DD/MM/YYYY HH:mm')}`
+  ];
+  formatBox('ENQUETE CRIADA', lines);
+}
+
+function logReactionDetails(reaction, chatName) {
+  const lines = [
+    `😀 Reação: ${reaction.reaction}`,
+    `💬 Mensagem: ${reaction.msgId && reaction.msgId.id ? reaction.msgId.id : JSON.stringify(reaction.msgId)}`,
+    `👤 Usuário: ${reaction.senderId}`,
+  ];
+  if (chatName) lines.push(`👥 Grupo: ${chatName}`);
+  lines.push(
+    `🕒 Horário (SP): ${moment.tz(reaction.timestamp * 1000, 'America/Sao_Paulo').format('DD/MM/YYYY HH:mm')}`
+  );
+  formatBox('REAÇÃO RECEBIDA', lines);
+}
 
 const { startAdProcessing } = require('./func/ads.js');
 
@@ -57,7 +111,8 @@ const {
   checkIfAdmin,
   upload,
   verificarAluguelAtivo,
-  abrirConversa
+  abrirConversa,
+  getQuotedMessageSafe
 } = require('./func/funcoes.js');
 const {
   criarMetadadoGrupo,
@@ -120,51 +175,42 @@ client.on('ready', () => {
   abrirOuFecharGp();
 });
 
+client.on('loading_screen', (percent, message) => {
+  formatBox('LOADING SCREEN', [
+    `Progresso: ${percent}%`,
+    `Mensagem: ${message}`
+  ]);
+});
+
+client.on('authenticated', () => {
+  formatBox('AUTHENTICATED', ['Cliente autenticado com sucesso']);
+});
 
 
-client.on('message', async (msg) => {
-
-  if (msg.body === '!updatebot' && msg.hasMedia) {
-
-    const media = await msg.downloadMedia();
-
-    if (media.mimetype === 'application/javascript') { // Verifica se é um arquivo .js
-      const filePath = './index.js'; // Caminho do arquivo no servidor
-      fs.writeFile(filePath, media.data, 'base64', (err) => {
-        if (err) {
-          client.sendMessage(msg.from, '❌ Erro ao atualizar o bot!');
-          console.error(err);
-        } else {
-          client.sendMessage(msg.from, '✅ Bot atualizado com sucesso! Recarregando...');
-          recarregarBot();
-        }
-      });
-    } else {
-      client.sendMessage(msg.from, '⚠️ Envie um arquivo válido (`index.js`)!');
-    }
+client.on('call', async (call) => {
+  const lines = [
+    `Chamada de: ${call.from}`,
+    `Tipo: ${call.isVideo ? 'Vídeo' : 'Áudio'}`
+  ];
+  formatBox('CHAMADA RECEBIDA', lines);
+  try {
+    await call.reject();
+    await client.sendMessage(call.from, mensagemPadraoPV);
+  } catch (err) {
+    console.error('Erro ao rejeitar chamada:', err);
   }
 });
 
-// Função para recarregar o bot via PM2
-function recarregarBot() {
-  exec(`pm2 reload ${config.nomeBot}`, (err, stdout, stderr) => {
-    if (err) {
-      console.error(`Erro ao recarregar: ${err}`);
-    }
-    console.log(`Bot recarregado: ${stdout}`);
-  });
-}
+
 
 client.on('group_participants.update', async (update) => {
   try {
     const grupoId = update.id; // Ex: 12036...@g.us
     const action = update.action;
-    const participantes = update.participants;
+    const participantes = update.participants || [];
 
-    // Apenas quando alguém for adicionado
     if (action === 'add') {
-      // Consulta no banco usando o ID com @g.us (coluna correta é 'groupId')
-      const configGrupo = await db('groups').where({ groupId: grupoId }).first();
+      const configGrupo = await obterConfiguracaoGrupo(grupoId);
 
       // Verifica se o AutoBan está ativado para esse grupo
       if (configGrupo?.autoban === 1) {
@@ -273,6 +319,23 @@ client.on('group_join', async (notification) => {
 
 client.on('group_leave', (notification) => {
   console.log('Group Leave:', notification);
+});
+
+client.on('message_reaction', async (reaction) => {
+  console.log('Raw reaction object:', JSON.stringify(reaction, null, 2));
+  const chatId =
+    (reaction.msgId && reaction.msgId.remote) ||
+    (reaction.id && reaction.id.remote);
+  let chatName;
+  if (chatId) {
+    try {
+      const chat = await client.getChatById(chatId);
+      chatName = chat?.name;
+    } catch (err) {
+      console.error('Erro ao obter chat para reação:', err.message);
+    }
+  }
+  logReactionDetails(reaction, chatName);
 });
 
 client.on('change_state', (state) => {
@@ -449,36 +512,16 @@ client.on('message', async (message) => {
     return;
   }
 
-  console.log(chalk.blueBright('┌─────────────────────────────────────────┐'));
-  console.log(chalk.blueBright('│               DETALHES DA MENSAGEM      │'));
-  console.log(chalk.blueBright('├─────────────────────────────────────────┤'));
-  console.log(chalk.yellowBright(`│ BOT: ${nomedoBot}`));
-  console.log(chalk.yellowBright(`│ Tipo: ${message.type || 'Desconhecido'}`));
 
-  if (isGroup) {
-    console.log(chalk.yellowBright(`│ Tipo de Mensagem: Grupo`));
-    console.log(chalk.yellowBright(`│ ID do Grupo: ${remetente}`));
-  } else {
-    console.log(chalk.yellowBright(`│ Tipo de Mensagem: Privado`));
-    console.log(chalk.yellowBright(`│ Número do Remetente: ${remetente}`));
-
-    // 📌 Responder apenas uma vez no privado
-    if (!usuariosRespondidos.has(remetente)) {
-      let respostaPadrao = "🔹 Olá! Sou um robô automatizado para administração de grupos no WhatsApp.\n\n⚠️ Não sou responsável por nenhuma ação tomada no grupo, apenas obedeço comandos programados para auxiliar na moderação.\n\n📌 Se precisar de suporte ou resolver alguma questão, entre em contato com um administrador do grupo.\n\n🔹 Obrigado pela compreensão!";
-
-      try {
-        await client.sendMessage(remetente, respostaPadrao);
-        usuariosRespondidos.add(remetente);
-        console.log(chalk.greenBright(`✅ Resposta enviada para ${remetente}`));
-      } catch (error) {
-        console.error(`❌ Erro ao enviar mensagem para ${remetente}:`, error);
-      }
+  if (!isGroup && !usuariosRespondidos.has(remetente)) {
+    try {
+      await client.sendMessage(remetente, mensagemPadraoPV);
+      usuariosRespondidos.add(remetente);
+      console.log(chalk.greenBright(`✅ Resposta enviada para ${remetente}`));
+    } catch (error) {
+      console.error(`❌ Erro ao enviar mensagem para ${remetente}:`, error);
     }
   }
-
-  console.log(chalk.greenBright(`│ Conteúdo: ${message.body.slice(0, 50)}`));
-  console.log(chalk.blueBright('└─────────────────────────────────────────┘'));
-
   // 📌 Processar comandos apenas se a mensagem começar com "!"
   if (message.body.startsWith("!")) {
     let command = message.body.split(" ")[0].toLowerCase();
@@ -606,65 +649,10 @@ client.on('message', async (message) => {
     }
   }
 
-  console.log(chalk.blueBright('┌─────────────────────────────────────────┐'));
-  console.log(chalk.blueBright('│               DETALHES DA MENSAGEM      │'));
-  console.log(chalk.blueBright('├─────────────────────────────────────────┤'));
-  console.log(chalk.yellowBright(`│ BOT: ${nomedoBot}`));
-  console.log(chalk.yellowBright(`│ Tipo: ${type || 'Desconhecido'}`));
-  console.log(chalk.yellowBright(`│ Links: ${links && links.length > 0 ? links.map(link => link.link).join(', ') : ' '}`));
-
-  if (isGroup) {
-    console.log(chalk.yellowBright(`│ Tipo de Mensagem: Grupo`));
-    console.log(chalk.yellowBright(`│ ID do Grupo: ${from}`));
-    let metadados = consultarMetadadoGrupo(from);
-
-    if (!metadados) {
-      console.log(chalk.yellow(`Metadados não encontrados para o grupo ${from}, criando...`));
-      const groupName = chat.name;
-      const groupAdmins = chat.groupMetadata ? chat.groupMetadata.participants.filter(p => p.isAdmin).map(admin => admin.id._serialized) : [];
-      const groupMembers = chat.participants.map(participant => participant.id._serialized);
-
-      const novosMetadados = {
-        groupId: from,
-        groupName: groupName,
-        admins: groupAdmins,
-        membros: groupMembers,
-      };
-
-      criarMetadadoGrupo(from, groupName, groupMembers, groupAdmins);
-      metadados = novosMetadados;
-      console.log(chalk.greenBright(`Metadados criados para o grupo: ${JSON.stringify(novosMetadados)}`));
-    } else {
-      console.log(chalk.greenBright(`│ Nome do Grupo: ${metadados.groupName || 'Sem nome'}`));
-      console.log(chalk.greenBright(`│ Membros do Grupo: ${metadados.membros.length}`));
-      console.log(chalk.greenBright(`│ Administradores do Grupo: ${metadados.admins.length}`));
-    }
-
-    let userType = 'Membro Comum';
-    if (isDono) {
-      userType = 'Dono';
-    } else if (isGroupAdmins) {
-      userType = 'Admin';
-    }
-
-    console.log(chalk.yellowBright(`│ Tipo de Usuário: ${userType}`));
-
-    let configuracaoGrupo = obterConfiguracaoGrupo(from);
-    if (!configuracaoGrupo) {
-      const groupName = chat.name;
-      criarConfiguracaoGrupo(from, groupName);
-      configuracaoGrupo = obterConfiguracaoGrupo(from);
-    }
-
-    console.log(chalk.yellowBright(`│ Número do Remetente: ${author || 'Desconhecido'}`));
-  } else {
-    console.log(chalk.yellowBright(`│ Tipo de Mensagem: Privado`));
-    console.log(chalk.yellowBright(`│ Número do Remetente: ${from || 'Desconhecido'}`));
-  }
-  const formattedTimestamp = new Date(timestamp * 1000).toLocaleString();
-  console.log(chalk.greenBright(`│ Timestamp: ${formattedTimestamp}`));
-  console.log(chalk.greenBright(`│ Conteúdo: ${body.slice(0, 50)}`));
-  console.log(chalk.blueBright('└─────────────────────────────────────────┘'));
+  const pushName = chat?.name || message._data?.notifyName || message._data?.pushName || message._data?.sender?.pushname;
+  const linksFormatted = links && links.length > 0 ? links.map(link => link.link).join(', ') : '';
+  const groupExpiryInfo = body.startsWith(config.prefixo) ? aluguelStatus.validade : null;
+  logMessageDetails(message, { pushName, isGroup, chatId: from, timestamp, links: linksFormatted, groupExpiry: groupExpiryInfo });
 
   if (isGroup) {
     await antilink(message);
@@ -1012,9 +1000,8 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
-
-        if (quotedMsg.hasMedia) {
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (quotedMsg && quotedMsg.hasMedia) {
           try {
             const media = await quotedMsg.downloadMedia();
             const imageUrl = await upload(media); alterarBemVindo(from, { fundobemvindo: imageUrl });
@@ -1024,8 +1011,10 @@ client.on('message', async (message) => {
           } catch (error) {
             await client.sendMessage(from, `Erro ao tentar fazer o upload da imagem: ${error.message}`);
           }
+        } else if (!quotedMsg) {
+          await client.sendMessage(from, 'Não foi possível acessar a mensagem citada.');
         } else {
-          await client.sendMessage(from, "A mensagem citada não contém mídia.");
+          await client.sendMessage(from, 'A mensagem citada não contém mídia.');
         }
       } else {
         await client.sendMessage(from, "Você precisa responder a uma mensagem com mídia para usar este comando.");
@@ -1054,9 +1043,8 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
-
-        if (quotedMsg.hasMedia) {
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (quotedMsg && quotedMsg.hasMedia) {
           try {
             const media = await quotedMsg.downloadMedia();
             const imageUrl = await upload(media); alterarBemVindo(from, { fundosaiu: imageUrl });
@@ -1066,8 +1054,10 @@ client.on('message', async (message) => {
           } catch (error) {
             await client.sendMessage(from, `Erro ao tentar fazer o upload da imagem: ${error.message}`);
           }
+        } else if (!quotedMsg) {
+          await client.sendMessage(from, 'Não foi possível acessar a mensagem citada.');
         } else {
-          await client.sendMessage(from, "A mensagem citada não contém mídia.");
+          await client.sendMessage(from, 'A mensagem citada não contém mídia.');
         }
       } else {
         await client.sendMessage(from, "Você precisa responder a uma mensagem com mídia para usar este comando.");
@@ -1094,16 +1084,17 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
-
-        if (quotedMsg.body) {
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (quotedMsg && quotedMsg.body) {
           const novaLegenda = quotedMsg.body.trim();
           alterarBemVindo(from, { legendasaiu: novaLegenda });
 
           await client.sendMessage(from, `Legenda de saída alterada para: "${novaLegenda}"`);
 
+        } else if (!quotedMsg) {
+          await client.sendMessage(from, 'Não foi possível acessar a mensagem citada.');
         } else {
-          await client.sendMessage(from, "A mensagem citada não contém texto.");
+          await client.sendMessage(from, 'A mensagem citada não contém texto.');
         }
       } else {
         await client.sendMessage(from, "Você precisa responder a uma mensagem com um texto para usar este comando e definir a legenda");
@@ -1414,14 +1405,13 @@ client.on('message', async (message) => {
         return;
       }
       if (message.hasQuotedMsg) {
-        try {
-          const quotedMsg = await message.getQuotedMessage();
-
-
-          const quotedMessageId = quotedMsg.id._serialized;
-
-          await quotedMsg.delete(true);
-        } catch (error) {
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (quotedMsg) {
+          try {
+            await quotedMsg.delete(true);
+          } catch (error) {
+            console.error('Erro ao apagar mensagem citada:', error);
+          }
         }
       }
       break;
@@ -1448,10 +1438,12 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        try {
-          const quotedMsg = await message.getQuotedMessage();
-          const quotedAuthor = quotedMsg.author || quotedMsg.from;
-
+        const quotedMsg = await getQuotedMessageSafe(message);
+        if (!quotedMsg) {
+          await client.sendMessage(from, 'Não foi possível acessar a mensagem citada.');
+        } else {
+          try {
+            const quotedAuthor = quotedMsg.author || quotedMsg.from;
           if (quotedAuthor) {
             console.log(`Banindo o participante ${quotedAuthor}`);
 
@@ -1460,14 +1452,20 @@ client.on('message', async (message) => {
 
             await client.sendMessage(from, `O participante ${quotedAuthor.replace('@c.us', '')} foi banido do grupo por motivos justos!`);
 
-            const quotedMessageId = quotedMsg.id._serialized;
-            await quotedMsg.delete(true);
+            if (quotedMsg) {
+              try {
+                await quotedMsg.delete(true);
+              } catch (err) {
+                console.error('Erro ao apagar mensagem citada:', err);
+              }
+            }
           } else {
             await client.sendMessage(from, 'Não foi possível identificar o participante citado para o banimento.');
           }
-        } catch (error) {
-          console.error('Erro ao tentar processar o banimento:', error);
-          await client.sendMessage(from, 'Ocorreu um erro ao tentar banir o participante.');
+          } catch (error) {
+            console.error('Erro ao tentar processar o banimento:', error);
+            await client.sendMessage(from, 'Ocorreu um erro ao tentar banir o participante.');
+          }
         }
 
       } else if (message.mentionedIds.length > 0) {
@@ -1573,20 +1571,30 @@ client.on('message', async (message) => {
 
       const sorteio = criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes);
 
-      const options = ["Participar ❤️", "Não Participar 😬"];
+      const pollOptions = ["Participar ❤️", "Não Participar 😬"];
 
       if (chat.isGroup) {
-        const participants = chat.participants;
-        const pollMessage = await client.sendMessage(from, new Poll(tituloSorteio, options), {
-          mentions: participants.map(p => `${p.id.user}@c.us`),
-        });
-
-        sorteio.idMensagem = pollMessage.id._serialized;
-        criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollMessage.id._serialized);
         await abrirConversa(from);
+        const poll = new Poll(tituloSorteio, pollOptions, { allowMultipleAnswers: false });
+        const pollMessage = await client.sendMessage(from, poll);
+        await abrirConversa(from);
+        let pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
+        if (!pollId) {
+          try {
+            const msgs = await chat.fetchMessages({ limit: 1 });
+            if (msgs && msgs.length > 0) {
+              pollId = msgs[0].id._serialized;
+            }
+          } catch (err) {
+            console.error('Erro ao obter ID da enquete:', err);
+          }
+        }
+        logPollEvent(pollId, chat.name);
+        sorteio.idMensagem = pollId;
+        criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollId);
 
         setTimeout(async () => {
-          const sorteioAtual = carregarSorteios().find(s => s.idMensagem === pollMessage.id._serialized);
+          const sorteioAtual = carregarSorteios().find(s => s.idMensagem === pollId);
 
         }, duracaoSorteio * 1000);
       }
@@ -1775,7 +1783,7 @@ client.on('message', async (message) => {
             }
 
             if (message.hasQuotedMsg) {
-              const quotedMsg = await message.getQuotedMessage();
+              const quotedMsg = await getQuotedMessageSafe(message);
               if (quotedMsg) {
                 if (quotedMsg.hasMedia) {
                   const quotedMedia = await quotedMsg.downloadMedia();
@@ -2026,7 +2034,7 @@ client.on('message', async (message) => {
         let pinnedMessage;
 
         if (message.hasQuotedMsg) {
-          const quotedMsg = await message.getQuotedMessage();
+          const quotedMsg = await getQuotedMessageSafe(message);
           if (quotedMsg) {
             if (quotedMsg.hasMedia) {
               const quotedMedia = await quotedMsg.downloadMedia();
@@ -2218,7 +2226,7 @@ client.on('message', async (message) => {
         }
 
         if (message.hasQuotedMsg) {
-          const quotedMessage = await message.getQuotedMessage();
+          const quotedMessage = await getQuotedMessageSafe(message);
 
           if (quotedMessage) {
             const result = await quotedMessage.unpin();
@@ -2311,7 +2319,7 @@ client.on('message', async (message) => {
         return;
       }
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         await client.sendMessage(from, `
                 *Info da mensagem citada:*
                 ID: ${quotedMsg.id._serialized}
@@ -2344,7 +2352,7 @@ client.on('message', async (message) => {
         return;
       }
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         if (quotedMsg.hasMedia) {
           const media = await quotedMsg.downloadMedia();
           await client.sendMessage(message.from, media, { caption: 'Aqui está a mídia solicitada.' });
@@ -2377,7 +2385,7 @@ client.on('message', async (message) => {
         return;
       }
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         if (quotedMsg.hasMedia) {
           const media = await quotedMsg.downloadMedia();
           await client.sendMessage(message.from, media, { isViewOnce: true });
@@ -2410,7 +2418,7 @@ client.on('message', async (message) => {
       }
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
 
         if (quotedMsg.hasMedia) {
           try {
@@ -2451,7 +2459,7 @@ client.on('message', async (message) => {
       console.log('Comando \'tourl2\' iniciado');
       try {
         if (message.hasQuotedMsg) {
-          const quotedMsg = await message.getQuotedMessage();
+          const quotedMsg = await getQuotedMessageSafe(message);
           if (quotedMsg && quotedMsg.hasMedia) {
             const quotedMedia = await quotedMsg.downloadMedia();
             const timestamp = Date.now();
@@ -2530,7 +2538,7 @@ client.on('message', async (message) => {
         let attachmentData = {};
 
         if (message.hasQuotedMsg) {
-          const quotedMsg = await message.getQuotedMessage();
+          const quotedMsg = await getQuotedMessageSafe(message);
 
           if (quotedMsg && quotedMsg.hasMedia) {
             const quotedMedia = await quotedMsg.downloadMedia();
@@ -2823,7 +2831,7 @@ client.on('message', async (message) => {
       let imageHorarios;
 
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         if (!quotedMsg.hasMedia) {
           await client.sendMessage(from, "A mensagem citada não contém mídia.");
           return;
@@ -3100,12 +3108,10 @@ Tempo ativo: ${uptime}
         return;
       }
 
-      const sentMessage = await client.sendMessage(from, "Pong... Calculando o ping...");
-
       const start = Date.now();
+      await client.sendMessage(from, "Pong...");
       const pingTime = Date.now() - start;
-
-      await sentMessage.edit(`🏓 O ping do bot é: ${pingTime}ms`);
+      await client.sendMessage(from, `🏓 O ping do bot é: ${pingTime}ms`);
       break;
 
     case 'abrirchat':
@@ -3811,7 +3817,7 @@ ${mensagemGostoso}`);
         }
 
         async function handleQuotedMessage() {
-          const quotedMsg = await message.getQuotedMessage();
+          const quotedMsg = await getQuotedMessageSafe(message);
           if (quotedMsg && quotedMsg.hasMedia) {
             const quotedMedia = await quotedMsg.downloadMedia();
             await processAndSendSticker(quotedMedia);
@@ -3910,7 +3916,7 @@ ${mensagemGostoso}`);
     case 'telegram':
       let media;
       if (message.hasQuotedMsg) {
-        const quotedMsg = await message.getQuotedMessage();
+        const quotedMsg = await getQuotedMessageSafe(message);
         if (!quotedMsg.hasMedia) {
           await client.sendMessage(from, "A mensagem citada não contém mídia.");
           return;

@@ -5,7 +5,8 @@ const chalk = require('chalk');
 const path = require('path');
 const qrcode = require('qrcode-terminal'); // Biblioteca para imprimir QR Code no terminal
 const config = require('./dono/config.json');
-const { sendCustomMessage } = require('./func/init/api');
+
+
 
 let chromePath = '/usr/bin/chromium-browser';
 
@@ -52,6 +53,9 @@ const client = new Client({
     }
 });
 
+
+
+
 // 📌 Exibir QR Code no terminal
 client.on('qr', qr => {
     console.log(chalk.yellow('📲 Escaneie o QR Code abaixo para conectar-se ao bot:'));
@@ -62,21 +66,30 @@ client.on('qr', qr => {
 client.on('ready', async () => {
     console.log(chalk.green(`🚀 Bot '${config.nomeBot || 'Bot'}' iniciado com sucesso e pronto para uso!`));
     if (config.numeroDono) {
-        await client.sendMessage(config.numeroDono + '@c.us', `✅ O bot '${config.nomeBot || 'Bot'}' está ativo e pronto para uso!`).catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
+        await client.sendMessage(
+            config.numeroDono + '@c.us',
+            `✅ O bot '${config.nomeBot || 'Bot'}' está ativo e pronto para uso!`
+        );
     }
 });
 
 // 📌 Lida com falhas de autenticação e reinicia o bot
 client.on('auth_failure', async () => {
     console.error('❌ Falha na autenticação! Reiniciando cliente...');
-    await sendCustomMessage(config.numeroDono, "⚠️ Falha na autenticação. O bot será reiniciado.").catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
+    await client.sendMessage(
+        config.numeroDono + '@c.us',
+        '⚠️ Falha na autenticação. O bot será reiniciado.'
+    );
     process.exit(1);
 });
 
 // 📌 Reinicia automaticamente caso seja desconectado
 client.on('disconnected', async (reason) => {
     console.error(`🔌 Conexão perdida (${reason}). Reiniciando cliente...`);
-    await sendCustomMessage(config.numeroDono, `⚠️ O bot foi desconectado (${reason}). Reiniciando...`).catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
+    await client.sendMessage(
+        config.numeroDono + '@c.us',
+        `⚠️ O bot foi desconectado (${reason}). Reiniciando...`
+    );
     process.exit(1);
 });
 
@@ -85,7 +98,10 @@ client.on('change_state', async (state) => {
     console.log(`🔄 Estado atualizado: ${state}`);
     if (['CONFLICT', 'UNPAIRED', 'UNLAUNCHED', 'BANNED'].includes(state)) {
         console.warn('⚠️ Sessão pode estar inválida. Reiniciando...');
-        await sendCustomMessage(config.numeroDono, "⚠️ A sessão foi detectada como inválida. O bot será reiniciado.").catch(err => console.error('Erro ao enviar mensagem ao dono:', err));
+        await client.sendMessage(
+            config.numeroDono + '@c.us',
+            '⚠️ A sessão foi detectada como inválida. O bot será reiniciado.'
+        );
         process.exit(1);
     }
 });

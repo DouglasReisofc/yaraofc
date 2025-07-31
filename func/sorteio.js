@@ -3,6 +3,18 @@ const fs = require('fs');
 const path = require('path');
 const moment = require('moment-timezone');
 const { abrirConversa } = require('./funcoes.js');
+const chalk = require('chalk');
+
+function formatBox(title, lines) {
+  const width = Math.max(...lines.map(l => l.length));
+  console.log(chalk.blueBright('┌' + '─'.repeat(width + 2) + '┐'));
+  console.log(chalk.blueBright('│ ' + title.padEnd(width) + ' │'));
+  console.log(chalk.blueBright('├' + '─'.repeat(width + 2) + '┤'));
+  for (const line of lines) {
+    console.log(chalk.yellowBright('│ ' + line.padEnd(width) + ' │'));
+  }
+  console.log(chalk.blueBright('└' + '─'.repeat(width + 2) + '┘'));
+}
 
 // Defina o caminho para o arquivo JSON onde os sorteios serão armazenados
 const sorteiosPath = path.join(__dirname, '../db/sorteio/sorteio.json');
@@ -36,6 +48,17 @@ function salvarSorteios(sorteios) {
   } catch (error) {
     console.error('Erro ao salvar sorteios:', error);
   }
+}
+
+/**
+ * Extrai apenas o ID da mensagem a partir de um ID serializado completo.
+ * @param {string} serializedId ID serializado (ex.: true_120@g.us_abcd1234)
+ * @returns {string|null} ID da mensagem ou null
+ */
+function extrairIdBasico(serializedId) {
+  if (typeof serializedId !== 'string') return null;
+  const partes = serializedId.split('_');
+  return partes.length >= 3 ? partes[2] : null;
 }
 
 /**
@@ -94,6 +117,16 @@ function criarSorteio(idGrupo, titulo, duracao, ganhadores = 1, limite = 0, idMe
  * @param {string} idGrupo - ID do grupo no WhatsApp.
  * @param {string} participante - ID do participante a ser adicionado.
  */
+function logParticipante(idGrupo, participante, acao) {
+  const lines = [
+    `Grupo: ${idGrupo}`,
+    `Votante: ${participante}`,
+    `Ação: ${acao}`,
+    `Horário (SP): ${moment.tz('America/Sao_Paulo').format('DD/MM/YYYY HH:mm')}`
+  ];
+  formatBox('SORTEIO ATUALIZADO', lines);
+}
+
 function adicionarParticipante(idGrupo, participante) {
   const sorteios = carregarSorteios();
   const sorteio = sorteios.find(s => s.idGrupo === idGrupo);
@@ -102,7 +135,7 @@ function adicionarParticipante(idGrupo, participante) {
     if (!sorteio.participantes.includes(participante)) {
       sorteio.participantes.push(participante);
       salvarSorteios(sorteios);
-      console.log(`Participante ${participante} adicionado ao sorteio do grupo ${idGrupo}`);
+      logParticipante(idGrupo, participante, 'adicionado ao JSON');
     } else {
       console.log(`Participante ${participante} já está no sorteio do grupo ${idGrupo}`);
     }
@@ -123,7 +156,7 @@ function removerParticipante(idGrupo, participante) {
   if (sorteio) {
     sorteio.participantes = sorteio.participantes.filter(p => p !== participante);
     salvarSorteios(sorteios);
-    console.log(`Participante ${participante} removido do sorteio do grupo ${idGrupo}`);
+    logParticipante(idGrupo, participante, 'removido do JSON');
   } else {
     console.log(`Sorteio não encontrado para o grupo ${idGrupo}`);
   }
@@ -140,6 +173,7 @@ async function finalizarSorteio(idGrupo) {
 
   if (sorteioIndex !== -1) {
     const sorteio = sorteios[sorteioIndex];
+    await abrirConversa(idGrupo);
     const { participantes, ganhadores } = sorteio;
 
     if (participantes.length < ganhadores) {
@@ -263,27 +297,44 @@ async function iniciarVerificacaoSorteiosAtivos() {
 
 client.on('vote_update', async (vote) => {
   console.log("Evento 'vote_update' acionado!");
+  console.log('VOTE UPDATE RAW:', JSON.stringify(vote, null, 2));
 
-  const pollId = vote.parentMessage.id ? vote.parentMessage.id._serialized : 'Não encontrado';
-  const voter = vote.voter;
-  const selectedOptions = vote.selectedOptions;
+  const parent = vote.parentMessage;
+  const pollSerialized =
+    parent?.id?._serialized || parent?._data?.id?._serialized || null;
+  const pollIdBase = extrairIdBasico(pollSerialized);
+  const groupId = parent?.to || parent?._data?.to || null;
+  const { voter, selectedOptions } = vote;
 
-  const sorteioAtivo = await verificarSorteioAtivo(vote.parentMessage.to);
+  formatBox('VOTE UPDATE DETALHADO', [
+    `Grupo: ${groupId}`,
+    `Poll ID: ${pollIdBase}`,
+    `Votante: ${voter}`,
+    `Opções: ${selectedOptions.map(o => `${o.localId}-${o.name}`).join(', ')}`
+  ]);
 
-  if (!sorteioAtivo || pollId !== sorteioAtivo.idMensagem) {
+  if (!pollIdBase || !groupId) return;
+
+  const sorteioAtivo = await verificarSorteioAtivo(groupId);
+  const sorteioBaseId = extrairIdBasico(sorteioAtivo?.idMensagem);
+  if (!sorteioAtivo || pollIdBase !== sorteioBaseId) {
     return;
   }
 
-  const groupId = vote.parentMessage.to;
-
   if (selectedOptions.length === 0) {
+    console.log(`Participante ${voter} removeu o voto no sorteio ${groupId}`);
     removerParticipante(groupId, voter);
   } else {
-    const chosenOption = selectedOptions[0].name;
-    if (chosenOption === 'Participar ❤️') {
-      adicionarParticipante(groupId, voter);
-    } else if (chosenOption === 'Não Participar 😬') {
-      removerParticipante(groupId, voter);
+    const option = selectedOptions[0];
+    switch (option.localId) {
+      case 0:
+        console.log(`Adicionando participante ${voter} ao sorteio ${groupId}`);
+        adicionarParticipante(groupId, voter);
+        break;
+      case 1:
+        console.log(`Removendo participante ${voter} do sorteio ${groupId}`);
+        removerParticipante(groupId, voter);
+        break;
     }
   }
 

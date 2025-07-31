@@ -16,9 +16,9 @@ const downloadFromApi = async (query, chatId) => {
         const chat = await client.getChatById(chatId);
         chat.sendStateTyping();
 
-        const baseUrl = config.downloadApiUrl;
-        const apiKey = config.downloadApiKey;
-        const url = `${baseUrl}/ytsearch?apikey=${apiKey}&nome=${encodeURIComponent(query)}`;
+        const baseUrl = config.botadminapi;
+        const apiKey = config.botadminapikey;
+        const url = `${baseUrl}/api/download/ytsearch?apikey=${apiKey}&nome=${encodeURIComponent(query)}`;
 
         const response = await axios.get(url);
         if (response.data && response.data.result && response.data.result.length > 0) {

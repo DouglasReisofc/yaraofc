@@ -7,8 +7,8 @@
     "apikeysite": "teste",
     "groqApiUrl": "https://api.groq.com/openai/v1/chat/completions",
     "groqApiKey": "",
-    "downloadApiUrl": "https://botadmin.shop/api/download",
-    "downloadApiKey": "equipevipadm",
+    "botadminapi": "https://botadmin.shop",
+    "botadminapikey": "equipevipadm",
     "portaexpres": "8003",
     "proxyServer": "http://200.239.217.167:59100",
     "proxyAuth": {

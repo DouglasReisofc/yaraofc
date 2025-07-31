@@ -114,11 +114,6 @@ const {
   abrirConversa,
   getQuotedMessageSafe
 } = require('./func/funcoes.js');
-const {
-  criarMetadadoGrupo,
-  atualizarMembrosGrupo,
-  consultarMetadadoGrupo
-} = require('./func/metadados.js');
 const textos = require('./db/textos/global.json');
 const {
   criarSorteio,
@@ -2060,36 +2055,18 @@ client.on('message', async (message) => {
         }
 
         const groupId = chat.id._serialized;
-        const groupName = chat.name;
-        const groupAdmins = chat.groupMetadata
-          ? chat.groupMetadata.participants.filter(p => p.isAdmin).map(admin => admin.id._serialized)
-          : [];
-        const groupMembers = chat.participants.map(participant => participant.id._serialized);
+        const groupMembers = chat.participants.map(p => p.id._serialized);
 
-        const metadadoExistente = consultarMetadadoGrupo(groupId);
-        if (metadadoExistente) {
-          await atualizarMembrosGrupo(groupId, groupMembers, groupAdmins);
-        } else {
-          await criarMetadadoGrupo(groupId, groupName, groupMembers, groupAdmins);
-        }
-
-        const membersData = consultarMetadadoGrupo(groupId);
-        if (!membersData || !membersData.membros) {
-          console.error('Não foi possível recuperar os membros armazenados.');
-          await client.sendMessage(from, 'Erro ao recuperar os membros do grupo.');
-          break;
-        }
-
-        const MAX_MENTIONS_PER_MESSAGE = 500; const totalMembros = membersData.membros.length;
+        const MAX_MENTIONS_PER_MESSAGE = 500;
         const chunks = [];
 
-        for (let i = 0; i < totalMembros; i += MAX_MENTIONS_PER_MESSAGE) {
-          chunks.push(membersData.membros.slice(i, i + MAX_MENTIONS_PER_MESSAGE));
+        for (let i = 0; i < groupMembers.length; i += MAX_MENTIONS_PER_MESSAGE) {
+          chunks.push(groupMembers.slice(i, i + MAX_MENTIONS_PER_MESSAGE));
         }
 
         for (const chunk of chunks) {
           const mentionText = chunk.map(id => `@${id.split('@')[0]}`).join(' ');
-          const mentions = chunk.map(id => id);
+          const mentions = chunk;
 
           console.log(`Enviando ${mentions.length} menções: ${mentionText}`);
 

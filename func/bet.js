@@ -6,13 +6,23 @@ const client = require('../client.js');
 const path = require('path');
 const { MessageMedia } = require('whatsapp-web.js');
 const FormData = require('form-data');
+const chalk = require('chalk');
 
 const siteapi = config.siteapi;
 const numerobot = config.numeroBot;
 
+function formatBox(title, lines) {
+    const width = Math.max(...lines.map(l => l.length));
+    console.log(chalk.blueBright('┌' + '─'.repeat(width + 2) + '┐'));
+    console.log(chalk.blueBright('│ ' + title.padEnd(width) + ' │'));
+    console.log(chalk.blueBright('├' + '─'.repeat(width + 2) + '┤'));
+    lines.forEach(l => console.log(chalk.yellowBright('│ ' + l.padEnd(width) + ' │')));
+    console.log(chalk.blueBright('└' + '─'.repeat(width + 2) + '┘'));
+}
+
 async function fetchHorapgFromAPI() {
     try {
-        const url = `${siteapi}/group/horapg?bot=${numerobot}`;
+        const url = `${siteapi}/group/horapg`;
         const response = await axios.get(url);
         if (response.data && Array.isArray(response.data.data)) {
             return response.data.data;
@@ -196,6 +206,10 @@ async function verificarHorariosEEnviarMensagens() {
         registros = [];
     }
 
+    formatBox('VERIFICAÇÃO HORAPG', [
+        `Grupos recebidos: ${Array.isArray(registros) ? registros.length : 0}`
+    ]);
+
     for (const registro of registros) {
         const grupoJid = registro.group_id;
         if (!grupoJid) continue;
@@ -230,6 +244,10 @@ async function verificarHorariosEEnviarMensagens() {
                         try {
                             const media = await MessageMedia.fromUrl(imagemUrl);
                             await client.sendMessage(grupoJid, media, { caption: mensagem });
+                            formatBox('HORAPG ENVIADO', [
+                                `Grupo: ${grupoJid}`,
+                                `Intervalo: ${registro.intervalo_horapg}`
+                            ]);
                         } catch (err) {
                             try {
                                 const media = await MessageMedia.fromUrl(defaultImage);

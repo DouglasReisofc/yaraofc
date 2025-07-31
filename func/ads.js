@@ -1,6 +1,7 @@
 const { MessageMedia } = require('whatsapp-web.js');
 const axios = require('axios');
 const moment = require('moment-timezone');
+const chalk = require('chalk');
 
 // Inicialização do cliente WhatsApp
 const client = require('../client.js');
@@ -11,6 +12,15 @@ const siteapi = config.siteapi;
 
 // Definição do fuso horário
 const TIMEZONE = "America/Sao_Paulo";
+
+function formatBox(title, lines) {
+    const width = Math.max(...lines.map(l => l.length));
+    console.log(chalk.blueBright('┌' + '─'.repeat(width + 2) + '┐'));
+    console.log(chalk.blueBright('│ ' + title.padEnd(width) + ' │'));
+    console.log(chalk.blueBright('├' + '─'.repeat(width + 2) + '┤'));
+    lines.forEach(l => console.log(chalk.yellowBright('│ ' + l.padEnd(width) + ' │')));
+    console.log(chalk.blueBright('└' + '─'.repeat(width + 2) + '┘'));
+}
 
 // Flag para evitar execuções concorrentes
 let isProcessing = false;
@@ -114,6 +124,11 @@ async function sendAdToGroup(ad) {
             await client.sendMessage(ad.group_identifier, ad.message);
         }
 
+        formatBox('ANÚNCIO ENVIADO', [
+            `Grupo: ${ad.group_identifier}`,
+            `ID: ${ad.id}`
+        ]);
+
         // Atualiza 'last_sent_at' na API
         const now = moment().tz(TIMEZONE).toISOString();
         await updateAdLastSentAtInAPI(ad.id, now);
@@ -125,6 +140,10 @@ async function sendAdToGroup(ad) {
 // Função para processar os anúncios obtidos da API
 async function processAds() {
     const ads = await fetchAdsFromAPI();
+
+    formatBox('VERIFICAÇÃO DE ADS', [
+        `Anúncios encontrados: ${Array.isArray(ads) ? ads.length : 0}`
+    ]);
 
     if (!Array.isArray(ads) || ads.length === 0) {
         return;
@@ -163,6 +182,10 @@ async function startAdProcessing() {
     }
 
     isProcessing = true;
+
+    formatBox('PROCESSO DE ADS', [
+        `Horário: ${moment().tz(TIMEZONE).format('DD/MM HH:mm:ss')}`
+    ]);
 
     try {
         await processAds();

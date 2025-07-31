@@ -271,11 +271,19 @@ async function iniciarVerificacaoSorteiosAtivos() {
           }
 
           // Envia a mensagem com menções
-          await client.sendMessage(sorteio.idGrupo, mensagemFinal, { mentions: mentionIds });
+          try {
+            await client.sendMessage(sorteio.idGrupo, mensagemFinal, { mentions: mentionIds });
+          } catch (error) {
+            console.error('Erro ao enviar mensagem final do sorteio com menções:', error);
+          }
         } else {
           // Mensagem personalizada quando não há vencedores devido à falta de participantes
           mensagemFinal = `乂 S O R T E I O   F I N A L I Z A D O 乂\n\nO sorteio "${sorteio.titulo}" foi finalizado, mas não houve vencedores, pois não havia participantes suficientes. 😔\n\nObrigado a todos que participaram! 🎁✨`;
-          await client.sendMessage(sorteio.idGrupo, mensagemFinal);
+          try {
+            await client.sendMessage(sorteio.idGrupo, mensagemFinal);
+          } catch (error) {
+            console.error('Erro ao enviar mensagem final do sorteio:', error);
+          }
         }
 
         // Exclui a enquete se o ID da mensagem for válido

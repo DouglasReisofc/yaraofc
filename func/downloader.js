@@ -11,18 +11,27 @@ const { youtube } = require("btch-downloader");
 const { exec } = require('child_process');
 const config = require('../dono/config.json');
 
-const downloadFromApi = async (query, chatId) => {
+const searchYTFromApi = async (query) => {
     try {
-        const chat = await client.getChatById(chatId);
-        chat.sendStateTyping();
-
         const baseUrl = config.botadminapi;
         const apiKey = config.botadminapikey;
         const url = `${baseUrl}/api/download/ytsearch?apikey=${apiKey}&nome=${encodeURIComponent(query)}`;
 
         const response = await axios.get(url);
         const data = response.data || {};
-        const results = data.resultados || data.result || data.results || [];
+        return data.resultados || data.result || data.results || [];
+    } catch (err) {
+        console.error(`Erro ao consultar ytsearch: ${err.message}`);
+        return [];
+    }
+};
+
+const downloadFromApi = async (query, chatId) => {
+    try {
+        const chat = await client.getChatById(chatId);
+        chat.sendStateTyping();
+
+        const results = await searchYTFromApi(query);
 
         if (Array.isArray(results) && results.length > 0) {
             const first = results[0];

@@ -1578,7 +1578,17 @@ client.on('message', async (message) => {
         const poll = new Poll(tituloSorteio, pollOptions, { allowMultipleAnswers: false });
         const pollMessage = await client.sendMessage(from, poll);
         await abrirConversa(from);
-        const pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
+        let pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
+        if (!pollId) {
+          try {
+            const msgs = await chat.fetchMessages({ limit: 1 });
+            if (msgs && msgs.length > 0) {
+              pollId = msgs[0].id._serialized;
+            }
+          } catch (err) {
+            console.error('Erro ao obter ID da enquete:', err);
+          }
+        }
         logPollEvent(pollId, chat.name);
         sorteio.idMensagem = pollId;
         criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollId);

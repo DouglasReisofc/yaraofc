@@ -10,14 +10,16 @@ const FormData = require('form-data');
 const { fromBuffer } = require('file-type');
 const axios = require('axios');
 const API_BASE_URL = config.siteapi;
+const API_KEY = config.apikeysite;
 
 const TelegramBot = require('node-telegram-bot-api');
-const BOT_TOKEN = "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxx"; const CHANNEL_ID = "-1002270297437";
+const BOT_TOKEN = config.telegramToken;
+const CHANNEL_ID = config.telegramChannelId;
 const bot = new TelegramBot(BOT_TOKEN, { polling: false });
 
 async function obterConfiguracaoGrupo(groupId) {
     try {
-        const apiUrl = `${API_BASE_URL}/group-settings/${groupId}?apikey=teste`;
+        const apiUrl = `${API_BASE_URL}/group-settings/${groupId}?apikey=${API_KEY}`;
         const response = await axios.get(apiUrl);
 
         if (response.status === 200) {
@@ -34,7 +36,7 @@ async function obterConfiguracaoGrupo(groupId) {
 
 async function verificarAluguelAtivo(groupId) {
     try {
-        const apiUrl = `${API_BASE_URL}/groups/${groupId}?apikey=teste`;
+        const apiUrl = `${API_BASE_URL}/groups/${groupId}?apikey=${API_KEY}`;
         const response = await axios.get(apiUrl);
         if (response.status === 200) {
             const dadosGrupo = response.data;
@@ -263,13 +265,13 @@ async function simi1(message) {
         if (configuracao && Number(configuracao.simi1) === 1) {
             if (author !== client.info.wid._serialized) {
                 const chat = await message.getChat(); chat.sendStateTyping(); await chat.sendSeen();
-                const apiKey = 'xxxxxxxxxxxxxxxxxx';
+                const apiKey = config.openaiApiKey;
 
                 if (!apiKey) {
                     return await client.sendMessage(message.from, '❌ Ocorreu um erro na configuração do bot.');
                 }
 
-                const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+                const apiUrl = config.openaiApiUrl;
                 const requestBody = {
                     model: 'llama3-8b-8192',
                     messages: [{
@@ -420,7 +422,7 @@ function abrirOuFecharGp() {
     setInterval(async () => {
         try {
             const agora = moment().tz('America/Sao_Paulo').format('HH:mm');
-            const urlHorarios = `${API_BASE_URL}/horarios?apikey=teste`;
+            const urlHorarios = `${API_BASE_URL}/horarios?apikey=${API_KEY}`;
             const response = await axios.get(urlHorarios);
 
             if (response.status !== 200 || !response.data.success) {
@@ -572,7 +574,7 @@ async function obterDadosBoasVindasESaida(groupId) {
 
 async function alterarBemVindo(groupId, newBemVindoData) {
     try {
-        const apiUrl = `${API_BASE_URL}/group-settings/${groupId}?apikey=teste`;
+        const apiUrl = `${API_BASE_URL}/group-settings/${groupId}?apikey=${API_KEY}`;
 
         const response = await axios.get(apiUrl);
         const configuracao = response.data;
@@ -606,7 +608,7 @@ async function alterarBemVindo(groupId, newBemVindoData) {
 
 async function alterarFuncaoGrupo(groupId, funcIdentifier, value) {
     try {
-        const apiUrl = `${API_BASE_URL}/group-settings/${groupId}?apikey=teste`;
+        const apiUrl = `${API_BASE_URL}/group-settings/${groupId}?apikey=${API_KEY}`;
         console.log(`Alterando função '${funcIdentifier}' para '${value}' no grupo ${groupId} via API.`);
 
         const response = await axios.get(apiUrl);

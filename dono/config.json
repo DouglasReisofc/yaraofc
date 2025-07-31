@@ -5,6 +5,10 @@
     "prefixo": "!",
     "siteapi": "https://bottechwpp.com",
     "apikeysite": "teste",
+    "openaiApiUrl": "https://api.groq.com/openai/v1/chat/completions",
+    "openaiApiKey": "",
+    "telegramToken": "",
+    "telegramChannelId": "",
     "portaexpres": "8003",
     "proxyServer": "http://200.239.217.167:59100",
     "proxyAuth": {

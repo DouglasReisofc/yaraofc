@@ -572,7 +572,7 @@ client.on('message', async (message) => {
 
     try {
       console.log(`Buscando ID interno para o grupo: ${gus}`);
-      const response = await axios.get(`https://bottechwpp.com/api/obter-id/${gus}`);
+      const response = await axios.get(`${siteapi}/api/obter-id/${gus}`);
 
       if (response.status === 200 && response.data.id) {
         console.log(`ID interno encontrado: ${response.data.id}`);
@@ -593,7 +593,7 @@ client.on('message', async (message) => {
     try {
       console.log(`🔎 Buscando mensagem para o grupo: ${grupoId}`);
 
-      const response = await axios.get(`https://bottechwpp.com/api/tabela/${grupoId}`, {
+      const response = await axios.get(`${siteapi}/api/tabela/${grupoId}`, {
         headers: {
           'Accept': 'application/json'
         }
@@ -626,7 +626,7 @@ client.on('message', async (message) => {
         return `⚠️ Sua mensagem ultrapassa o limite de ${limiteCaracteres} caracteres! ✂️\n\n📏 Tente reduzir o tamanho.`;
       }
 
-      const response = await axios.post('https://bottechwpp.com/api/tabela', {
+      const response = await axios.post(`${siteapi}/api/tabela`, {
         group_id: grupoId, // Agora está correto
         mensagem_tabela: novaMensagem
       });
@@ -836,7 +836,7 @@ client.on('message', async (message) => {
         return;
       }
       try {
-        const iddogrupo = from; const response = await axios.get(`https://bottechwpp.com/ads/${iddogrupo}`);
+        const iddogrupo = from; const response = await axios.get(`${siteapi}/ads/${iddogrupo}`);
 
         const ads = response.data.ads;
         if (ads && ads.length > 0) {
@@ -888,7 +888,7 @@ client.on('message', async (message) => {
 
       const adId = args[1];
       try {
-        const response = await axios.get(`https://bottechwpp.com/ads/${from}`);
+        const response = await axios.get(`${siteapi}/ads/${from}`);
 
         if (response.status === 200) {
           const groupId = response.data.group_id;
@@ -896,7 +896,7 @@ client.on('message', async (message) => {
 
           if (ad) {
             if (groupId === from) {
-              const deleteResponse = await axios.get(`https://bottechwpp.com/ads/delete/${adId}`);
+              const deleteResponse = await axios.get(`${siteapi}/ads/delete/${adId}`);
 
               if (deleteResponse.status === 200) {
                 await client.sendMessage(from, `Anúncio com ID ${adId} excluído com sucesso.`);
@@ -2593,7 +2593,7 @@ client.on('message', async (message) => {
             console.log(`Arquivo salvo em: ${filePath}`);
 
             const formData = new FormData();
-            formData.append('file', fs.createReadStream(filePath)); const response = await axios.post('https://bottechwpp.com/arq', formData, {
+            formData.append('file', fs.createReadStream(filePath)); const response = await axios.post(`${siteapi}/arq`, formData, {
               headers: formData.getHeaders(),
             });
 
@@ -2737,7 +2737,7 @@ client.on('message', async (message) => {
         }
 
         try {
-          const response = await axios.post(`https://bottechwpp.com/group/${message.from}/ads`, formData, {
+          const response = await axios.post(`${siteapi}/group/${message.from}/ads`, formData, {
             headers: formData.getHeaders(),
             validateStatus: function (status) {
               return status >= 200 && status < 500;
@@ -3067,7 +3067,7 @@ client.on('message', async (message) => {
       try {
         const groupId = message.from;
 
-        const apiUrl = `https://bottechwpp.com/groups/${groupId}?apikey=teste`;
+        const apiUrl = `${siteapi}/groups/${groupId}?apikey=${apikeysite}`;
 
         const axios = require('axios');
         const response = await axios.get(apiUrl);
@@ -3723,9 +3723,9 @@ ${mensagemGostoso}`);
         return;
       }
       try {
-        const apiKey = 'xxx';
+        const apiKey = config.openaiApiKey;
 
-        const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        const apiUrl = config.openaiApiUrl;
 
         const requestBody = {
           model: 'llama3-8b-8192', messages: [{
@@ -3768,9 +3768,9 @@ ${mensagemGostoso}`);
       }
 
       try {
-        const apiKey = 'xxxxx';
+        const apiKey = config.openaiApiKey;
 
-        const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        const apiUrl = config.openaiApiUrl;
 
         const requestBody = {
           model: 'llama3-8b-8192', messages: [{
@@ -3818,9 +3818,9 @@ ${mensagemGostoso}`);
       }
 
       try {
-        const apiKey = 'xxx';
+        const apiKey = config.openaiApiKey;
 
-        const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        const apiUrl = config.openaiApiUrl;
 
         const requestBody = {
           model: 'llama3-8b-8192', messages: [{

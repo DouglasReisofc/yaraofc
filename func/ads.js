@@ -7,6 +7,7 @@ const client = require('../client.js');
 const config = require('../dono/config.json');
 
 const numerobot = config.numeroBot;
+const siteapi = config.siteapi;
 
 // Definição do fuso horário
 const TIMEZONE = "America/Sao_Paulo";
@@ -39,7 +40,7 @@ function parseInterval(intervalStr) {
 // Função para atualizar 'last_sent_at' na API
 async function updateAdLastSentAtInAPI(adId, lastSentAt) {
     try {
-        await axios.put(`https://bottechwpp.com/ads/${adId}/update-last-sent`, {
+        await axios.put(`${siteapi}/ads/${adId}/update-last-sent`, {
             last_sent_at: lastSentAt
         });
         //console.log(`[${moment().tz(TIMEZONE).format()}] 'last_sent_at' atualizado na API para o anúncio ID ${adId}.`);
@@ -80,7 +81,7 @@ function canSendAd(ad) {
 // Busca os anúncios diretamente da API principal
 async function fetchAdsFromAPI() {
     try {
-        const response = await axios.get(`https://bottechwpp.com/ads/bot/${numerobot}`);
+        const response = await axios.get(`${siteapi}/ads/bot/${numerobot}`);
         if (response.data && Array.isArray(response.data.ads)) {
             return response.data.ads;
         }

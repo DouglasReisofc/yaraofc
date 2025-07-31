@@ -190,55 +190,70 @@ async function verificarHorariosEEnviarMensagens() {
     const timestampAtual = moment.tz('America/Sao_Paulo').valueOf();
     const defaultImage = "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg";
 
-    const registros = await fetchHorapgFromAPI();
+    let registros = [];
+    try {
+        registros = await fetchHorapgFromAPI();
+    } catch (err) {
+        registros = [];
+    }
 
     for (const registro of registros) {
         const grupoJid = registro.group_id;
         if (!grupoJid) continue;
 
-        if (registro.horapg && registro.intervalo_horapg) {
-            const intervaloMs = converterIntervaloParaMs(registro.intervalo_horapg);
-            if (intervaloMs === null) continue;
+        try {
+            await client.getChatById(grupoJid);
+        } catch {
+            continue;
+        }
 
-            if (!registro.ultimo_envio_horapg) {
-                await updateLastSent(grupoJid);
-                continue;
-            }
+        try {
+            if (registro.horapg && registro.intervalo_horapg) {
+                const intervaloMs = converterIntervaloParaMs(registro.intervalo_horapg);
+                if (intervaloMs === null) continue;
 
-            const ultimaNotificacao = registro.ultimo_envio_horapg
-                ? moment.tz(registro.ultimo_envio_horapg, 'America/Sao_Paulo').valueOf()
-                : null;
-
-            if (!ultimaNotificacao || (timestampAtual - ultimaNotificacao) >= intervaloMs) {
-                const horarioAtual = obterHorarioAtual();
-                const mensagem = buscarHorarios(horarioAtual);
-
-                const imagemUrl = registro.imagem_horapg || defaultImage;
-
-                if (mensagem) {
-                    try {
-                        const media = await MessageMedia.fromUrl(imagemUrl);
-                        await client.sendMessage(grupoJid, media, { caption: mensagem });
-                    } catch (err) {
-                        try {
-                            const media = await MessageMedia.fromUrl(defaultImage);
-                            await client.sendMessage(grupoJid, media, { caption: mensagem });
-                        } catch (fallbackErr) {
-                            // falha silenciosa
-                        }
-                    }
-                } else {
-                    try {
-                        await client.sendMessage(grupoJid, "_❲❗❳   Desculpe, Sem Horário Atualmente_");
-                    } catch (err) {
-                        // erro silencioso
-                    }
+                if (!registro.ultimo_envio_horapg) {
+                    await updateLastSent(grupoJid);
+                    continue;
                 }
 
-                await updateLastSent(grupoJid);
+                const ultimaNotificacao = registro.ultimo_envio_horapg
+                    ? moment.tz(registro.ultimo_envio_horapg, 'America/Sao_Paulo').valueOf()
+                    : null;
 
-                await sleep(2000);
+                if (!ultimaNotificacao || (timestampAtual - ultimaNotificacao) >= intervaloMs) {
+                    const horarioAtual = obterHorarioAtual();
+                    const mensagem = buscarHorarios(horarioAtual);
+
+                    const imagemUrl = registro.imagem_horapg || defaultImage;
+
+                    if (mensagem) {
+                        try {
+                            const media = await MessageMedia.fromUrl(imagemUrl);
+                            await client.sendMessage(grupoJid, media, { caption: mensagem });
+                        } catch (err) {
+                            try {
+                                const media = await MessageMedia.fromUrl(defaultImage);
+                                await client.sendMessage(grupoJid, media, { caption: mensagem });
+                            } catch {
+                                // falha silenciosa
+                            }
+                        }
+                    } else {
+                        try {
+                            await client.sendMessage(grupoJid, "_❲❗❳   Desculpe, Sem Horário Atualmente_");
+                        } catch {
+                            // erro silencioso
+                        }
+                    }
+
+                    await updateLastSent(grupoJid);
+
+                    await sleep(2000);
+                }
             }
+        } catch {
+            // erro silencioso por grupo
         }
     }
 }

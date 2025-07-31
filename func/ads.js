@@ -131,23 +131,27 @@ async function processAds() {
     }
 
     for (let ad of ads) {
-        if (!ad.id || !ad.group_identifier || !ad.interval || !ad.message) {
-            continue;
-        }
-
-        const eligibility = canSendAd(ad);
-        if (!eligibility.eligible) {
-            continue;
-        }
-
-        // Verifica se o bot ainda está no grupo
         try {
-            await client.getChatById(ad.group_identifier);
-        } catch (err) {
+            if (!ad.id || !ad.group_identifier || !ad.interval || !ad.message) {
+                continue;
+            }
+
+            const eligibility = canSendAd(ad);
+            if (!eligibility.eligible) {
+                continue;
+            }
+
+            try {
+                await client.getChatById(ad.group_identifier);
+            } catch {
+                continue;
+            }
+
+            await sendAdToGroup(ad);
+        } catch {
+            // erro silencioso por anúncio
             continue;
         }
-
-        await sendAdToGroup(ad);
     }
 }
 

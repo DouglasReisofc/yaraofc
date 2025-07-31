@@ -357,6 +357,46 @@ client.on('vote_update', async (vote) => {
   }
 });
 
+client.on('message_reaction', async (reaction) => {
+  console.log("Evento 'message_reaction' acionado!");
+  console.log('REACTION RAW:', JSON.stringify(reaction, null, 2));
+
+  const serialized = reaction.msgId?._serialized || reaction.id?._serialized || null;
+  const messageId = extrairIdBasico(serialized);
+  const groupId = reaction.msgId?.remote || reaction.id?.remote || null;
+  const participante = reaction.senderId;
+
+  if (!messageId || !groupId || !participante) return;
+
+  const sorteioAtivo = await verificarSorteioAtivo(groupId);
+  const sorteioBaseId = extrairIdBasico(sorteioAtivo?.idMensagem);
+  if (!sorteioAtivo || messageId !== sorteioBaseId) return;
+
+  if (reaction.reaction) {
+    console.log(`Adicionando participante ${participante} ao sorteio ${groupId}`);
+    adicionarParticipante(groupId, participante);
+  } else {
+    console.log(`Removendo participante ${participante} do sorteio ${groupId}`);
+    removerParticipante(groupId, participante);
+  }
+
+  const atualizado = carregarSorteios().find(s => s.idGrupo === groupId);
+  if (atualizado) {
+    console.log('Participantes atuais:', atualizado.participantes.join(', '));
+  }
+
+  const sorteioAtual = await verificarSorteioAtivo(groupId);
+  if (sorteioAtual && sorteioAtual.limite > 0 && sorteioAtual.participantes.length >= sorteioAtual.limite) {
+    if (sorteioAtual.idMensagem) {
+      const msg = await client.getMessageById(sorteioAtual.idMensagem);
+      if (msg) {
+        await msg.delete(true);
+        await client.sendMessage(groupId, 'O limite de participantes foi atingido. O sorteio está encerrado, aguardem o resultado.');
+      }
+    }
+  }
+});
+
 module.exports = {
   criarSorteio,
   adicionarParticipante,

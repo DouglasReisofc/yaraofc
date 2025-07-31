@@ -1602,31 +1602,96 @@ client.on('message', async (message) => {
 
 
     case 'sorteio2':
-      if (!isGroup) {
-        await client.sendMessage(from, msgsogrupo); return;
-      }
-
-      if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await client.sendMessage(from, modosoadm); return;
-      }
-
-      if (!(isDono || isGroupAdmins)) {
-        await client.sendMessage(from, msgadmin); return;
-      }
-
-      const participants = chat.participants;
-
-      if (participants.length === 0) {
-        await client.sendMessage(from, "Este grupo não tem participantes!");
+      if (!aluguelStatus.ativo) {
+        await client.sendMessage(from, msgaluguel);
         return;
       }
 
-      const vencedor = participants[Math.floor(Math.random() * participants.length)];
+      if (!isGroup) {
+        await client.sendMessage(from, msgsogrupo);
+        return;
+      }
 
-      const mentionIds = [vencedor.id._serialized];
-      const mensagemSorteio = `🎉 O sorteio foi realizado! 🎉\n\n🏆 *Vencedor:* @${vencedor.id.user} 🏆\n\nParabéns!`;
+      if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
+        await client.sendMessage(from, modosoadm);
+        return;
+      }
 
-      await client.sendMessage(from, mensagemSorteio, { mentions: mentionIds });
+      if (!(isDono || isGroupAdmins)) {
+        await client.sendMessage(from, msgadmin);
+        return;
+      }
+
+      if (args.length === 1) {
+        await client.sendMessage(
+          from,
+          "Para utilizar o comando !sorteio2, você deve especificar a descrição, o tempo de duração, o número de ganhadores e, opcionalmente, o número de participantes. Exemplo:\n\n!sorteio2 <Descrição> | <Duração> | <Número de Ganhadores> | <Limite de Participantes>\n\nExemplo: !sorteio2 'Sorteio de 10 Casas de Luxo' | 10m | 1 | 50\n\nOnde:\n- <Descrição>: Título ou descrição do sorteio.\n- <Duração>: Tempo de duração do sorteio (ex: 10s para 10 segundos, 5m para 5 minutos, 1h para 1 hora).\n- <Número de Ganhadores>: Quantos ganhadores o sorteio terá (opcional, padrão é 1).\n- <Limite de Participantes>: Limite de participantes (opcional, padrão é 0, sem limite)."
+        );
+        return;
+      }
+
+      const sorteioArgs2 = args.slice(1).join(' ').trim().split('|');
+      if (sorteioArgs2.length < 2) {
+        await client.sendMessage(
+          from,
+          "Para utilizar o comando !sorteio2, você deve especificar a descrição, o tempo de duração, o número de ganhadores e, opcionalmente, o número de participantes. Exemplo:\n\n!sorteio2 <Descrição> | <Duração> | <Número de Ganhadores> | <Limite de Participantes>\n\nExemplo: !sorteio2 'Sorteio de 10 Casas de Luxo' | 10m | 1 | 50"
+        );
+        return;
+      }
+
+      const tituloSorteio2 = sorteioArgs2[0].trim();
+      const duracaoStr2 = sorteioArgs2[1].trim();
+      const numGanhadores2 = sorteioArgs2[2] ? parseInt(sorteioArgs2[2].trim(), 10) : 1;
+      const limiteParticipantes2 = sorteioArgs2[3] ? parseInt(sorteioArgs2[3].trim(), 10) : 0;
+
+      const converterDuracao2 = (duracao) => {
+        const regex = /(\d+)([smh])/;
+        const match = duracao.match(regex);
+        if (!match) return 0;
+
+        const quantidade = parseInt(match[1], 10);
+        const unidade = match[2];
+
+        switch (unidade) {
+          case 's':
+            return quantidade;
+          case 'm':
+            return quantidade * 60;
+          case 'h':
+            return quantidade * 60 * 60;
+          default:
+            return 0;
+        }
+      };
+
+      const duracaoSorteio2 = converterDuracao2(duracaoStr2);
+      if (duracaoSorteio2 <= 0) {
+        await client.sendMessage(
+          from,
+          "A duração fornecida não é válida. Use o formato: <Número><s/m/h>, por exemplo: 10s para 10 segundos, 5m para 5 minutos ou 1h para 1 hora."
+        );
+        return;
+      }
+
+      const sorteioAtivo2 = await verificarSorteioAtivo(from);
+      if (sorteioAtivo2) {
+        await client.sendMessage(from, "Já existe um sorteio ativo neste grupo. Aguarde a finalização do sorteio atual.");
+        return;
+      }
+
+      if (chat.isGroup) {
+        await abrirConversa(from);
+        const mensagem = await client.sendMessage(
+          from,
+          `🎉 *${tituloSorteio2}* 🎉\n\nReaja a esta mensagem com qualquer emoji para participar do sorteio.`
+        );
+        const msgId = mensagem?.id?._serialized || null;
+        criarSorteio(from, tituloSorteio2, duracaoSorteio2, numGanhadores2, limiteParticipantes2, msgId);
+
+        setTimeout(async () => {
+          const sorteioAtual = carregarSorteios().find((s) => s.idMensagem === msgId);
+        }, duracaoSorteio2 * 1000);
+      }
 
       break;
 

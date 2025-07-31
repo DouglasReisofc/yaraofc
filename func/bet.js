@@ -25,18 +25,21 @@ async function fetchHorapgFromAPI() {
 
 async function storeHorapg(groupId, data = {}) {
     try {
-        await axios.post(`${siteapi}/group/${groupId}/horapg`, data);
+        const payload = { ...data };
+        if (payload.imagem) {
+            payload.imagem_horapg = payload.imagem;
+            delete payload.imagem;
+        }
+        await axios.post(`${siteapi}/group/${groupId}/horapg`, payload);
         return true;
     } catch (err) {
         return false;
     }
 }
 
-async function updateLastSent(groupId, lastSentAt) {
+async function updateLastSent(groupId) {
     try {
-        await axios.patch(`${siteapi}/group/${groupId}/horapg/last-sent`, {
-            last_sent_at: lastSentAt,
-        });
+        await axios.patch(`${siteapi}/group/${groupId}/horapg/last-sent`);
     } catch (err) {
         // erro silencioso
     }
@@ -53,8 +56,8 @@ async function deleteHorapg(groupId) {
 async function getHorapg(groupId) {
     try {
         const response = await axios.get(`${siteapi}/group/${groupId}/horapg`);
-        if (response.data) {
-            return response.data;
+        if (response.data && response.data.settings) {
+            return response.data.settings;
         }
     } catch (err) {
         // erro silencioso
@@ -204,8 +207,7 @@ async function verificarHorariosEEnviarMensagens() {
                     }
                 }
 
-                const nowIso = moment.tz('America/Sao_Paulo').toISOString();
-                await updateLastSent(grupoId, nowIso);
+                await updateLastSent(grupoId);
 
                 await sleep(2000);
             }

@@ -11,7 +11,7 @@ const FormData = require('form-data');
 const chalk = require('chalk');
 const moment = require('moment-timezone');
 const config = require('./dono/config.json');
-const { obterHorarioAtual, buscarHorarios, verificarHorariosEEnviarMensagens, storeHorapg, updateLastSent, getHorapg } = require('./func/bet.js');
+const { obterHorarioAtual, buscarHorarios, verificarHorariosEEnviarMensagens, storeHorapg, updateLastSent, deleteHorapg, getHorapg } = require('./func/bet.js');
 const { processTikTokMedia, processKwaiMedia, downloadVideoFromYouTube, downloadFromApi } = require('./func/downloader.js');
 const os = require('os');
 const ping = require('ping');
@@ -2799,14 +2799,22 @@ client.on('message', async (message) => {
 
       const ativarNotificacoes = args[1] === '1';
 
-
       const grupoIdAtivar = message.from;
 
-      const payload = { ativado: ativarNotificacoes };
-      await storeHorapg(grupoIdAtivar, payload);
+      if (ativarNotificacoes) {
+        const dadosAtuais = await getHorapg(grupoIdAtivar);
+        const intervalo = dadosAtuais?.intervalo_horapg || '5m';
+        const imagem = dadosAtuais?.imagem_horapg;
 
-      const horarioAtualCorrigido = moment.tz('America/Sao_Paulo').subtract(2, 'hours').toISOString();
-      await updateLastSent(grupoIdAtivar, horarioAtualCorrigido);
+        await storeHorapg(grupoIdAtivar, {
+          horapg: true,
+          intervalo_horapg: intervalo,
+          imagem_horapg: imagem
+        });
+        await updateLastSent(grupoIdAtivar);
+      } else {
+        await deleteHorapg(grupoIdAtivar);
+      }
 
       await client.sendMessage(grupoIdAtivar, `✅ Notificações ${ativarNotificacoes ? 'ativadas' : 'desativadas'} para este grupo.\nUse o comando ${prefixo}addhorapg 5m para adicionar o intervalo de tempo que cada horario será enviado.`);
       break;
@@ -2839,7 +2847,13 @@ client.on('message', async (message) => {
 
       const grupoIdHorarios = message.from;
 
-      await storeHorapg(grupoIdHorarios, { intervalo: intervaloArgumento });
+      const dadosAtuais = await getHorapg(grupoIdHorarios);
+
+      await storeHorapg(grupoIdHorarios, {
+        horapg: dadosAtuais?.horapg || false,
+        intervalo_horapg: intervaloArgumento,
+        imagem_horapg: dadosAtuais?.imagem_horapg
+      });
 
       await client.sendMessage(grupoIdHorarios, `✅ Intervalo de notificações ajustado para ${intervaloArgumento}. Para ativar ou desativar as notificações automáticas, use ${prefixo}horapg`);
       break;
@@ -2925,7 +2939,13 @@ client.on('message', async (message) => {
         const fileLink = await upload(imageHorarios);
         const groupJid = message.from;
 
-        await storeHorapg(groupJid, { imagem: fileLink });
+        const dadosAtuais = await getHorapg(groupJid);
+
+        await storeHorapg(groupJid, {
+          horapg: dadosAtuais?.horapg || false,
+          intervalo_horapg: dadosAtuais?.intervalo_horapg || '5m',
+          imagem_horapg: fileLink
+        });
 
         const mediaMessage = await MessageMedia.fromUrl(fileLink);
         await client.sendMessage(message.from, mediaMessage, {

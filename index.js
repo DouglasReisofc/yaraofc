@@ -1580,9 +1580,10 @@ client.on('message', async (message) => {
 
         let pollId = pollMessage?.id?._serialized || obterIdCompleto(pollMessage);
 
-        // Garante que o ID da enquete foi obtido corretamente
+        // Garante que o ID final da enquete foi obtido corretamente
         if (!pollId) {
           try {
+            await new Promise(res => setTimeout(res, 1000));
             const msgs = await chat.fetchMessages({ limit: 5 });
             const pollMsg = msgs.find(m => m.type === 'poll_creation' && m.fromMe);
             if (pollMsg) {
@@ -1691,9 +1692,10 @@ client.on('message', async (message) => {
         );
         let msgId = obterIdCompleto(mensagem);
 
-        // Garante que o ID da mensagem enviada foi obtido
+        // Garante que o ID final da mensagem enviada foi obtido
         if (!msgId) {
           try {
+            await new Promise(res => setTimeout(res, 1000));
             const msgs = await chat.fetchMessages({ limit: 5 });
             const msg = msgs.find(
               (m) => m.fromMe && m.body && m.body.includes(tituloSorteio2)

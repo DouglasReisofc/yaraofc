@@ -1578,7 +1578,7 @@ client.on('message', async (message) => {
         const pollMessage = await client.sendMessage(from, poll);
         await abrirConversa(from);
 
-        let pollId = obterIdCompleto(pollMessage);
+        let pollId = pollMessage?.id?._serialized || obterIdCompleto(pollMessage);
 
         // Garante que o ID da enquete foi obtido corretamente
         if (!pollId) {
@@ -1689,7 +1689,7 @@ client.on('message', async (message) => {
           from,
           `🎉 *${tituloSorteio2}* 🎉\n\nReaja a esta mensagem com qualquer emoji para participar do sorteio.`
         );
-        let msgId = obterIdCompleto(mensagem);
+        let msgId = mensagem?.id?._serialized || obterIdCompleto(mensagem);
 
         // Garante que o ID da mensagem enviada foi obtido
         if (!msgId) {

@@ -311,10 +311,17 @@ async function iniciarVerificacaoSorteiosAtivos() {
         // Exclui a enquete se o ID da mensagem for válido
         if (sorteio.idMensagem) {
           try {
-            const pollMessage = await client.getMessageById(sorteio.idMensagem);
+            let pollMessage = await client.getMessageById(sorteio.idMensagem);
+            if (!pollMessage) {
+              const chat = await client.getChatById(sorteio.idGrupo);
+              const msgs = await chat.fetchMessages({ limit: 50 });
+              pollMessage = msgs.find(m => obterIdCompleto(m) === sorteio.idMensagem);
+            }
             if (pollMessage) {
               await pollMessage.delete(true);
               console.log(`Enquete excluída com sucesso para o sorteio "${sorteio.titulo}".`);
+            } else {
+              console.log('Não foi possível localizar a enquete para exclusão.');
             }
           } catch (error) {
             console.error('Erro ao excluir a enquete:', error);
@@ -377,10 +384,15 @@ client.on('vote_update', async (vote) => {
   const sorteioAtual = await verificarSorteioAtivo(groupId);
   if (sorteioAtual && sorteioAtual.limite > 0 && sorteioAtual.participantes.length >= sorteioAtual.limite) {
     if (sorteioAtual.idMensagem) {
-      const pollMessage = await client.getMessageById(sorteioAtual.idMensagem);
+      let pollMessage = await client.getMessageById(sorteioAtual.idMensagem);
+      if (!pollMessage) {
+        const chat = await client.getChatById(groupId);
+        const msgs = await chat.fetchMessages({ limit: 50 });
+        pollMessage = msgs.find(m => obterIdCompleto(m) === sorteioAtual.idMensagem);
+      }
       if (pollMessage) {
         await pollMessage.delete(true);
-        await client.sendMessage(groupId, "O limite de participantes foi atingido. O sorteio está encerrado, aguardem o resultado.");
+        await client.sendMessage(groupId, 'O limite de participantes foi atingido. O sorteio está encerrado, aguardem o resultado.');
       }
     }
   }

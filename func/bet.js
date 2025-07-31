@@ -11,7 +11,9 @@ const numerobot = config.numeroBot;
 
 async function fetchHorapgFromAPI() {
     try {
-        const response = await axios.get(`${siteapi}/group/horapg`);
+        const response = await axios.get(
+            `${siteapi}/group/horapg?bot=${numerobot}`
+        );
         if (response.data && Array.isArray(response.data.data)) {
             return response.data.data;
         }

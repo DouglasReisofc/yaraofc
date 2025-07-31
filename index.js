@@ -1569,8 +1569,6 @@ client.on('message', async (message) => {
         return;
       }
 
-      const sorteio = criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes);
-
       const pollOptions = ["Participar ❤️", "Não Participar 😬"];
 
       if (chat.isGroup) {
@@ -1590,7 +1588,6 @@ client.on('message', async (message) => {
           }
         }
         logPollEvent(pollId, chat.name);
-        sorteio.idMensagem = pollId;
         criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollId);
 
         setTimeout(async () => {

@@ -82,7 +82,9 @@ function criarSorteio(idGrupo, titulo, duracao, ganhadores = 1, limite = 0, idMe
   let sorteioExistente = sorteios.find(s => s.idGrupo === idGrupo);
 
   if (sorteioExistente) {
-    sorteioExistente.idMensagem = idMensagem;
+    if (idMensagem) {
+      sorteioExistente.idMensagem = idMensagem;
+    }
     sorteioExistente.titulo = titulo;
     sorteioExistente.ganhadores = ganhadores;
     sorteioExistente.limite = limite;

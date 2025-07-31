@@ -13,7 +13,8 @@ let userDataDir = null;
 
 if (os.platform() === 'win32') {
     // Usa o executável do Chrome no Windows
-    chromePath = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
+    chromePath = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
+
 } else {
     // Em Linux, tenta primeiro o Google Chrome, depois o Chromium
     if (fs.existsSync('/usr/bin/google-chrome')) {
@@ -40,16 +41,13 @@ const client = new Client({
     }),
     puppeteer: {
         executablePath: chromePath,
-        headless: true,
+        headless: false,
         userDataDir: userDataDir || undefined,
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
             "--disable-accelerated-2d-canvas",
-            "--no-first-run",
-            "--no-zygote",
-            "--disable-gpu",
             "--disable-session-crashed-bubble",
             "--disable-infobars",
             "--disable-features=site-per-process,TranslateUI",
@@ -120,5 +118,5 @@ client.on('change_state', async (state) => {
 
 client.initialize();
 
-// ✅ Mantendo a exportação do cliente no mesmo formato que você já usava
+
 module.exports = client;

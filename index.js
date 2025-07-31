@@ -11,7 +11,7 @@ const FormData = require('form-data');
 const chalk = require('chalk');
 const moment = require('moment-timezone');
 const config = require('./dono/config.json');
-const { obterHorarioAtual, buscarHorarios, verificarHorariosEEnviarMensagens, storeHorapg, updateLastSent } = require('./func/bet.js');
+const { obterHorarioAtual, buscarHorarios, verificarHorariosEEnviarMensagens, storeHorapg, updateLastSent, getHorapg } = require('./func/bet.js');
 const { processTikTokMedia, processKwaiMedia, downloadVideoFromYouTube, downloadFromApi } = require('./func/downloader.js');
 const os = require('os');
 const ping = require('ping');
@@ -2868,14 +2868,13 @@ client.on('message', async (message) => {
 
       const horarios = buscarHorarios(horarioAtual);
 
-      const imagensConfig = require('./db/bet/imagens.json');
-
       const groupJid = message.from;
+      const dadosHorapg = await getHorapg(groupJid);
 
-      const defaultImage = imagensConfig.default?.imagem ||
+      const defaultImage =
         'https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg';
 
-      let imagemUrl = imagensConfig[groupJid]?.imagem || defaultImage;
+      let imagemUrl = dadosHorapg?.imagem || dadosHorapg?.imagem_url || defaultImage;
 
       try {
         const media = await MessageMedia.fromUrl(imagemUrl);
@@ -2924,22 +2923,10 @@ client.on('message', async (message) => {
 
       try {
         const fileLink = await upload(imageHorarios);
-        const jsonFilePath = './db/bet/imagens.json';
-        let imagensConfig = {};
-
-        if (fs.existsSync(jsonFilePath)) {
-          imagensConfig = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
-        } else {
-          imagensConfig = {
-            "default": {
-              "imagem": "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg"
-            }
-          };
-          fs.writeFileSync(jsonFilePath, JSON.stringify(imagensConfig, null, 2));
-        }
         const groupJid = message.from;
-        imagensConfig[groupJid] = { imagem: fileLink };
-        fs.writeFileSync(jsonFilePath, JSON.stringify(imagensConfig, null, 2));
+
+        await storeHorapg(groupJid, { imagem: fileLink });
+
         const mediaMessage = await MessageMedia.fromUrl(fileLink);
         await client.sendMessage(message.from, mediaMessage, {
           caption: `Nova imagem do comando ${prefixo}horarios  foi definida`

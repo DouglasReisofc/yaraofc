@@ -48,6 +48,18 @@ async function deleteHorapg(groupId) {
     }
 }
 
+async function getHorapg(groupId) {
+    try {
+        const response = await axios.get(`${siteapi}/group/${groupId}/horapg`);
+        if (response.data) {
+            return response.data;
+        }
+    } catch (err) {
+        // erro silencioso
+    }
+    return null;
+}
+
 
 function obterHorarioAtual() {
     const agora = moment.tz('America/Sao_Paulo');
@@ -148,18 +160,7 @@ function converterIntervaloParaMs(intervalo) {
 
 async function verificarHorariosEEnviarMensagens() {
     const timestampAtual = moment.tz('America/Sao_Paulo').valueOf();
-    const imagensPath = "./db/bet/imagens.json";
-
-    if (!fs.existsSync(imagensPath)) {
-        return;
-    }
-
-    let imagensConfig;
-    try {
-        imagensConfig = JSON.parse(fs.readFileSync(imagensPath, "utf-8"));
-    } catch (err) {
-        return;
-    }
+    const defaultImage = "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg";
 
     const registros = await fetchHorapgFromAPI();
 
@@ -179,8 +180,7 @@ async function verificarHorariosEEnviarMensagens() {
                 const horarioAtual = obterHorarioAtual();
                 const mensagem = buscarHorarios(horarioAtual);
 
-                const defaultImage = "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg";
-                const imagemUrl = imagensConfig[grupoId]?.imagem || defaultImage;
+                const imagemUrl = registro.imagem || registro.imagem_url || defaultImage;
 
                 if (mensagem) {
                     try {
@@ -234,5 +234,6 @@ module.exports = {
     fetchHorapgFromAPI,
     storeHorapg,
     updateLastSent,
-    deleteHorapg
+    deleteHorapg,
+    getHorapg
 };

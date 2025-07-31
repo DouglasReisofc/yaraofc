@@ -1,11 +1,52 @@
 const axios = require("axios");
 const config = require("../dono/config.json");
-const { fetchHorapgFromAPI, updateLastSent } = require("./horapg.js");
 const moment = require('moment-timezone');
 const fs = require('fs');
 const client = require('../client.js');
 const path = require('path');
 const { MessageMedia } = require('whatsapp-web.js');
+
+const siteapi = config.siteapi;
+const numerobot = config.numeroBot;
+
+async function fetchHorapgFromAPI() {
+    try {
+        const response = await axios.get(`${siteapi}/horapg/bot/${numerobot}`);
+        if (response.data && Array.isArray(response.data.horapg)) {
+            return response.data.horapg;
+        }
+    } catch (error) {
+        // erro silencioso
+    }
+    return [];
+}
+
+async function storeHorapg(groupId, data = {}) {
+    try {
+        await axios.post(`${siteapi}/group/${groupId}/horapg`, data);
+        return true;
+    } catch (err) {
+        return false;
+    }
+}
+
+async function updateLastSent(groupId, lastSentAt) {
+    try {
+        await axios.patch(`${siteapi}/group/${groupId}/horapg/last-sent`, {
+            last_sent_at: lastSentAt,
+        });
+    } catch (err) {
+        // erro silencioso
+    }
+}
+
+async function deleteHorapg(groupId) {
+    try {
+        await axios.delete(`${siteapi}/group/${groupId}/horapg`);
+    } catch (err) {
+        // erro silencioso
+    }
+}
 
 
 function obterHorarioAtual() {
@@ -189,5 +230,9 @@ fs.watchFile(file, () => {
 module.exports = {
     obterHorarioAtual,
     buscarHorarios,
-    verificarHorariosEEnviarMensagens
+    verificarHorariosEEnviarMensagens,
+    fetchHorapgFromAPI,
+    storeHorapg,
+    updateLastSent,
+    deleteHorapg
 };

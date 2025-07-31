@@ -58,7 +58,7 @@ function salvarSorteios(sorteios) {
 function extrairIdBasico(serializedId) {
   if (typeof serializedId !== 'string') return null;
   const partes = serializedId.split('_');
-  return partes.length >= 3 ? partes[2] : null;
+  return partes.length >= 3 ? partes[2] : serializedId;
 }
 
 /**
@@ -338,6 +338,11 @@ client.on('vote_update', async (vote) => {
     }
   }
 
+  const atualizado = carregarSorteios().find(s => s.idGrupo === groupId);
+  if (atualizado) {
+    console.log('Participantes atuais:', atualizado.participantes.join(', '));
+  }
+
   const sorteioAtual = await verificarSorteioAtivo(groupId);
   if (sorteioAtual && sorteioAtual.limite > 0 && sorteioAtual.participantes.length >= sorteioAtual.limite) {
     if (sorteioAtual.idMensagem) {
@@ -357,5 +362,6 @@ module.exports = {
   finalizarSorteio,
   verificarSorteioAtivo,
   iniciarVerificacaoSorteiosAtivos,
-  carregarSorteios
+  carregarSorteios,
+  extrairIdBasico
 };

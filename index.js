@@ -12,7 +12,7 @@ const chalk = require('chalk');
 const moment = require('moment-timezone');
 const config = require('./dono/config.json');
 const { obterHorarioAtual, buscarHorarios, verificarHorariosEEnviarMensagens } = require('./func/bet.js');
-const { processTikTokMedia, processKwaiMedia, downloadVideoFromYouTube, downloadAudioFromYouTube } = require('./func/downloader.js');
+const { processTikTokMedia, processKwaiMedia, downloadVideoFromYouTube, downloadFromApi } = require('./func/downloader.js');
 const os = require('os');
 const ping = require('ping');
 const ffmpeg = require('fluent-ffmpeg');
@@ -1776,19 +1776,8 @@ client.on('message', async (message) => {
         return;
       }
 
-      const videoRequest = args.slice(1).join(' ').trim();
-
-      const isValidUrl = (str) => {
-        const regex = /(https?:\/\/[^\s]+)/g;
-        return regex.test(str);
-      };
-
-      const videoTitle = videoRequest;
-      if (isValidUrl(videoTitle)) {
-        await downloadAudioFromYouTube(videoTitle, from);
-      } else {
-        await downloadAudioFromYouTube(videoTitle, from);
-      }
+      const query = args.slice(1).join(' ').trim();
+      await downloadFromApi(query, from);
       break;
 
     case 'ytmp4':
@@ -3723,9 +3712,9 @@ ${mensagemGostoso}`);
         return;
       }
       try {
-        const apiKey = config.openaiApiKey;
+        const apiKey = config.groqApiKey;
 
-        const apiUrl = config.openaiApiUrl;
+        const apiUrl = config.groqApiUrl;
 
         const requestBody = {
           model: 'llama3-8b-8192', messages: [{
@@ -3768,9 +3757,9 @@ ${mensagemGostoso}`);
       }
 
       try {
-        const apiKey = config.openaiApiKey;
+        const apiKey = config.groqApiKey;
 
-        const apiUrl = config.openaiApiUrl;
+        const apiUrl = config.groqApiUrl;
 
         const requestBody = {
           model: 'llama3-8b-8192', messages: [{
@@ -3818,9 +3807,9 @@ ${mensagemGostoso}`);
       }
 
       try {
-        const apiKey = config.openaiApiKey;
+        const apiKey = config.groqApiKey;
 
-        const apiUrl = config.openaiApiUrl;
+        const apiUrl = config.groqApiUrl;
 
         const requestBody = {
           model: 'llama3-8b-8192', messages: [{
@@ -4031,29 +4020,6 @@ ${mensagemGostoso}`);
 
 
 
-    case 'telegram':
-      let media;
-      if (message.hasQuotedMsg) {
-        const quotedMsg = await getQuotedMessageSafe(message);
-        if (!quotedMsg.hasMedia) {
-          await client.sendMessage(from, "A mensagem citada não contém mídia.");
-          return;
-        }
-        media = await quotedMsg.downloadMedia();
-      } else if (message.hasMedia) {
-        media = await message.downloadMedia();
-      } else {
-        await client.sendMessage(from, "Responda a uma mensagem com mídia ou envie uma mídia para usar este comando.");
-        return;
-      }
-      try {
-        const fileLink = await upload(media);
-        const mediaMessage = await MessageMedia.fromUrl(fileLink);
-        await client.sendMessage(message.from, mediaMessage);
-      } catch (err) {
-        await client.sendMessage(from, `❌ Erro ao enviar mídia: ${err.message}`);
-      }
-      break;
 
 
 

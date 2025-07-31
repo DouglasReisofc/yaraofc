@@ -12,10 +12,6 @@ const axios = require('axios');
 const API_BASE_URL = config.siteapi;
 const API_KEY = config.apikeysite;
 
-const TelegramBot = require('node-telegram-bot-api');
-const BOT_TOKEN = config.telegramToken;
-const CHANNEL_ID = config.telegramChannelId;
-const bot = new TelegramBot(BOT_TOKEN, { polling: false });
 
 async function obterConfiguracaoGrupo(groupId) {
     try {
@@ -265,13 +261,13 @@ async function simi1(message) {
         if (configuracao && Number(configuracao.simi1) === 1) {
             if (author !== client.info.wid._serialized) {
                 const chat = await message.getChat(); chat.sendStateTyping(); await chat.sendSeen();
-                const apiKey = config.openaiApiKey;
+                const apiKey = config.groqApiKey;
 
                 if (!apiKey) {
                     return await client.sendMessage(message.from, '❌ Ocorreu um erro na configuração do bot.');
                 }
 
-                const apiUrl = config.openaiApiUrl;
+                const apiUrl = config.groqApiUrl;
                 const requestBody = {
                     model: 'llama3-8b-8192',
                     messages: [{
@@ -506,7 +502,8 @@ async function upload(media) {
         const tempDir = './temp';
         if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
 
-        let ext = 'jpg'; if (media.mimetype && media.mimetype.includes('/')) {
+        let ext = 'jpg';
+        if (media.mimetype && media.mimetype.includes('/')) {
             ext = media.mimetype.split('/')[1];
         }
         const filename = `${Date.now()}.${ext}`;
@@ -514,34 +511,24 @@ async function upload(media) {
 
         fs.writeFileSync(filePath, media.data, 'base64');
 
-        let sentMessage;
+        const formData = new FormData();
+        formData.append('file', fs.createReadStream(filePath));
 
-        if (media.mimetype.startsWith("image/")) {
-            sentMessage = await bot.sendPhoto(CHANNEL_ID, filePath);
-        } else if (media.mimetype.startsWith("video/")) {
-            sentMessage = await bot.sendVideo(CHANNEL_ID, filePath);
-        } else if (media.mimetype.startsWith("audio/")) {
-            sentMessage = await bot.sendAudio(CHANNEL_ID, filePath);
-        } else if (media.mimetype.startsWith("application/")) {
-            sentMessage = await bot.sendDocument(CHANNEL_ID, filePath);
-        } else {
-            sentMessage = await bot.sendDocument(CHANNEL_ID, filePath);
-        }
+        const response = await axios.post(`${API_BASE_URL}/arq`, formData, {
+            headers: formData.getHeaders(),
+        });
 
         fs.unlinkSync(filePath);
 
-        const fileId = sentMessage.photo ? sentMessage.photo[sentMessage.photo.length - 1].file_id :
-            sentMessage.document ? sentMessage.document.file_id :
-                sentMessage.video ? sentMessage.video.file_id :
-                    sentMessage.audio ? sentMessage.audio.file_id : null;
+        if (response.data && response.data.url) {
+            return response.data.url;
+        }
 
-        const fileLink = await bot.getFileLink(fileId);
-
-        return fileLink;
+        throw new Error('URL não retornada pela API');
 
     } catch (error) {
-        console.error(`Erro ao enviar mídia para o Telegram: ${error.message}`);
-        throw new Error(`Erro ao enviar mídia para o Telegram: ${error.message}`);
+        console.error(`Erro ao enviar mídia: ${error.message}`);
+        throw new Error(`Erro ao enviar mídia: ${error.message}`);
     }
 }
 

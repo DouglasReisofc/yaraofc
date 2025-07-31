@@ -11,6 +11,36 @@ const { youtube } = require("btch-downloader");
 const { exec } = require('child_process');
 const config = require('../dono/config.json');
 
+const downloadFromApi = async (query, chatId) => {
+    try {
+        const chat = await client.getChatById(chatId);
+        chat.sendStateTyping();
+
+        const baseUrl = config.downloadApiUrl;
+        const apiKey = config.downloadApiKey;
+        const url = `${baseUrl}/ytsearch?apikey=${apiKey}&nome=${encodeURIComponent(query)}`;
+
+        const response = await axios.get(url);
+        if (response.data && response.data.result && response.data.result.length > 0) {
+            const first = response.data.result[0];
+            if (first.audio) {
+                const media = await MessageMedia.fromUrl(first.audio);
+                await client.sendMessage(chatId, media, { caption: first.title || '' });
+            } else if (first.url) {
+                const media = await MessageMedia.fromUrl(first.url);
+                await client.sendMessage(chatId, media, { caption: first.title || '' });
+            } else {
+                await client.sendMessage(chatId, '❌ Não foi possível encontrar o áudio.');
+            }
+        } else {
+            await client.sendMessage(chatId, '❌ Nenhum resultado encontrado.');
+        }
+    } catch (error) {
+        console.error(`Erro ao usar API de download: ${error.message}`);
+        await client.sendMessage(chatId, '❌ Erro ao usar a API de download.');
+    }
+};
+
 // Pasta temporária para salvar arquivos
 const tmpFolder = './tmp';
 
@@ -328,4 +358,5 @@ module.exports = {
     processKwaiMedia,
     downloadVideoFromYouTube,
     downloadAudioFromYouTube,
+    downloadFromApi,
 };

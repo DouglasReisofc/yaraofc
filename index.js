@@ -2914,10 +2914,12 @@ client.on('message', async (message) => {
 
       const groupJid = message.from;
 
-      const imagemUrl = imagensConfig[groupJid] ? imagensConfig[groupJid].imagem : imagensConfig.default.imagem;
+      const defaultImage = imagensConfig.default?.imagem ||
+        'https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg';
+
+      let imagemUrl = imagensConfig[groupJid]?.imagem || defaultImage;
 
       try {
-
         const media = await MessageMedia.fromUrl(imagemUrl);
 
         if (horarios) {
@@ -2928,7 +2930,18 @@ client.on('message', async (message) => {
           await client.sendMessage(message.from, "❗️ Não há horários configurados no momento.");
         }
       } catch (err) {
-        await client.sendMessage(from, `❌ Erro ao enviar a mídia: ${err.message}`);
+        if (imagemUrl !== defaultImage) {
+          try {
+            const media = await MessageMedia.fromUrl(defaultImage);
+            await client.sendMessage(message.from, media, {
+              caption: `Horário Atual: ${horarioAtual}\n\n${horarios || ''}`
+            });
+          } catch (fallbackErr) {
+            await client.sendMessage(from, `❌ Erro ao enviar a mídia: ${fallbackErr.message}`);
+          }
+        } else {
+          await client.sendMessage(from, `❌ Erro ao enviar a mídia: ${err.message}`);
+        }
       }
       break;
 

@@ -143,8 +143,8 @@ async function verificarHorariosEEnviarMensagens() {
                 const mensagem = buscarHorarios(horarioAtual);
 
 
-                const imagemUrl = imagensConfig[grupoId]?.imagem
-                    || "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg";
+                const defaultImage = "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg";
+                const imagemUrl = imagensConfig[grupoId]?.imagem || defaultImage;
 
                 if (mensagem) {
                     try {
@@ -154,8 +154,7 @@ async function verificarHorariosEEnviarMensagens() {
                     } catch (err) {
                         console.error(`Erro ao enviar imagem personalizada para grupo ${grupoId}: ${err.message}`);
                         try {
-
-                            const media = await MessageMedia.fromUrl("https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg");
+                            const media = await MessageMedia.fromUrl(defaultImage);
                             await client.sendMessage(grupoId, media, { caption: mensagem });
                         } catch (fallbackErr) {
                             console.error(`Erro ao enviar imagem padrão: ${fallbackErr.message}`);

@@ -1576,12 +1576,15 @@ client.on('message', async (message) => {
         const poll = new Poll(tituloSorteio, pollOptions, { allowMultipleAnswers: false });
         const pollMessage = await client.sendMessage(from, poll);
         await abrirConversa(from);
-        let pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
+        let pollId = pollMessage?.id?._serialized || null;
+
+        // Caso o ID não esteja imediatamente disponível, busca a mensagem de enquete
         if (!pollId) {
           try {
-            const msgs = await chat.fetchMessages({ limit: 1 });
-            if (msgs && msgs.length > 0) {
-              pollId = msgs[0].id._serialized;
+            const msgs = await chat.fetchMessages({ limit: 5 });
+            const pollMsg = msgs.find(m => m.type === 'poll_creation');
+            if (pollMsg) {
+              pollId = pollMsg.id._serialized;
             }
           } catch (err) {
             console.error('Erro ao obter ID da enquete:', err);

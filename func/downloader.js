@@ -21,14 +21,18 @@ const downloadFromApi = async (query, chatId) => {
         const url = `${baseUrl}/api/download/ytsearch?apikey=${apiKey}&nome=${encodeURIComponent(query)}`;
 
         const response = await axios.get(url);
-        if (response.data && response.data.result && response.data.result.length > 0) {
-            const first = response.data.result[0];
-            if (first.audio) {
-                const media = await MessageMedia.fromUrl(first.audio);
+        const data = response.data || {};
+        const results = data.resultados || data.result || data.results || [];
+
+        if (Array.isArray(results) && results.length > 0) {
+            const first = results[0];
+            const mediaUrl = first.audio || first.url || first.link;
+
+            if (mediaUrl) {
+                const media = await MessageMedia.fromUrl(mediaUrl);
                 await client.sendMessage(chatId, media, { caption: first.title || '' });
-            } else if (first.url) {
-                const media = await MessageMedia.fromUrl(first.url);
-                await client.sendMessage(chatId, media, { caption: first.title || '' });
+            } else if (first.title && first.url) {
+                await client.sendMessage(chatId, `${first.title}\n${first.url}`);
             } else {
                 await client.sendMessage(chatId, '❌ Não foi possível encontrar o áudio.');
             }

@@ -402,11 +402,9 @@ client.on('message_reaction', async (reaction) => {
   console.log("Evento 'message_reaction' acionado!");
   console.log('REACTION RAW:', JSON.stringify(reaction, null, 2));
 
-  const serialized =
-    obterIdCompleto(reaction.msgId) ||
-    obterIdCompleto(reaction.id);
+  const serialized = obterIdCompleto(reaction.msgId) || obterIdCompleto(reaction.id);
   const messageId = extrairIdBasico(serialized);
-  const groupId = reaction.msgId?.remote || reaction.id?.remote || null;
+  const groupId = reaction.chatId || reaction.msgId?.remote || reaction.id?.remote || null;
   const participante = reaction.senderId;
 
   if (!messageId || !groupId || !participante) return;

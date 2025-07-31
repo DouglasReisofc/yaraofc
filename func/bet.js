@@ -1,3 +1,6 @@
+const axios = require("axios");
+const config = require("../dono/config.json");
+const { fetchHorapgFromAPI, updateLastSent } = require("./horapg.js");
 const moment = require('moment-timezone');
 const fs = require('fs');
 const client = require('../client.js');
@@ -104,83 +107,65 @@ function converterIntervaloParaMs(intervalo) {
 
 async function verificarHorariosEEnviarMensagens() {
     const timestampAtual = moment.tz('America/Sao_Paulo').valueOf();
-    const horariosPath = "./db/bet/horarios.json";
     const imagensPath = "./db/bet/imagens.json";
 
-
-    if (!fs.existsSync(horariosPath)) {
-        return;
-    }
     if (!fs.existsSync(imagensPath)) {
         return;
     }
 
-    let horariosGrupos, imagensConfig;
+    let imagensConfig;
     try {
-        horariosGrupos = JSON.parse(fs.readFileSync(horariosPath, "utf-8"));
         imagensConfig = JSON.parse(fs.readFileSync(imagensPath, "utf-8"));
     } catch (err) {
         return;
     }
 
-    let atualizado = false;
+    const registros = await fetchHorapgFromAPI();
 
-    for (let grupoId in horariosGrupos) {
-        const grupo = horariosGrupos[grupoId];
+    for (const registro of registros) {
+        const grupoId = registro.group_identifier;
+        if (!grupoId) continue;
 
-        if (grupo.ativado && grupo.intervalo) {
-            const intervaloMs = converterIntervaloParaMs(grupo.intervalo);
-            if (intervaloMs === null) {
-                continue;
-            }
+        if (registro.ativado && registro.intervalo) {
+            const intervaloMs = converterIntervaloParaMs(registro.intervalo);
+            if (intervaloMs === null) continue;
 
-            const ultimaNotificacao = grupo.ultimaNotificacao
-                ? moment.tz(grupo.ultimaNotificacao, 'America/Sao_Paulo').valueOf()
+            const ultimaNotificacao = registro.last_sent_at
+                ? moment.tz(registro.last_sent_at, 'America/Sao_Paulo').valueOf()
                 : null;
 
             if (!ultimaNotificacao || (timestampAtual - ultimaNotificacao) >= intervaloMs) {
                 const horarioAtual = obterHorarioAtual();
                 const mensagem = buscarHorarios(horarioAtual);
 
-
                 const defaultImage = "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg";
                 const imagemUrl = imagensConfig[grupoId]?.imagem || defaultImage;
 
                 if (mensagem) {
                     try {
-
                         const media = await MessageMedia.fromUrl(imagemUrl);
                         await client.sendMessage(grupoId, media, { caption: mensagem });
                     } catch (err) {
-                        console.error(`Erro ao enviar imagem personalizada para grupo ${grupoId}: ${err.message}`);
                         try {
                             const media = await MessageMedia.fromUrl(defaultImage);
                             await client.sendMessage(grupoId, media, { caption: mensagem });
                         } catch (fallbackErr) {
-                            console.error(`Erro ao enviar imagem padrão: ${fallbackErr.message}`);
+                            // falha silenciosa
                         }
                     }
                 } else {
                     try {
                         await client.sendMessage(grupoId, "_❲❗❳   Desculpe, Sem Horário Atualmente_");
                     } catch (err) {
-                        console.error(`Erro ao enviar mensagem de ausência de horários para grupo ${grupoId}: ${err.message}`);
+                        // erro silencioso
                     }
                 }
 
-                grupo.ultimaNotificacao = moment.tz('America/Sao_Paulo').toISOString();
-                atualizado = true;
+                const nowIso = moment.tz('America/Sao_Paulo').toISOString();
+                await updateLastSent(grupoId, nowIso);
 
                 await sleep(2000);
             }
-        }
-    }
-
-    if (atualizado) {
-        try {
-            fs.writeFileSync(horariosPath, JSON.stringify(horariosGrupos, null, 2), "utf-8");
-        } catch (err) {
-            console.error(`Erro ao atualizar o arquivo de horários: ${err.message}`);
         }
     }
 }

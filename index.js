@@ -13,6 +13,7 @@ const moment = require('moment-timezone');
 const config = require('./dono/config.json');
 const { obterHorarioAtual, buscarHorarios, verificarHorariosEEnviarMensagens } = require('./func/bet.js');
 const { processTikTokMedia, processKwaiMedia, downloadVideoFromYouTube, downloadFromApi } = require('./func/downloader.js');
+const { storeHorapg, updateLastSent } = require('./func/horapg.js');
 const os = require('os');
 const ping = require('ping');
 const ffmpeg = require('fluent-ffmpeg');
@@ -2802,36 +2803,11 @@ client.on('message', async (message) => {
 
       const grupoIdAtivar = message.from;
 
-      const horariosPathAtivar = './db/bet/horarios.json';
-
-      if (!fs.existsSync(horariosPathAtivar)) {
-        console.error("Arquivo de horários não encontrado.");
-        return;
-      }
-
-
-      let horariosGruposAtivar = JSON.parse(fs.readFileSync(horariosPathAtivar, "utf-8"));
-
-
-      if (!horariosGruposAtivar[grupoIdAtivar]) {
-        horariosGruposAtivar[grupoIdAtivar] = {
-          horarios: [],
-          ultimaNotificacao: null,
-          ativado: true
-        };
-      }
-
-
-      horariosGruposAtivar[grupoIdAtivar].ativado = ativarNotificacoes;
-
+      const payload = { ativado: ativarNotificacoes };
+      await storeHorapg(grupoIdAtivar, payload);
 
       const horarioAtualCorrigido = moment.tz('America/Sao_Paulo').subtract(2, 'hours').toISOString();
-
-
-      horariosGruposAtivar[grupoIdAtivar].ultimaNotificacao = horarioAtualCorrigido;
-
-
-      fs.writeFileSync(horariosPathAtivar, JSON.stringify(horariosGruposAtivar, null, 2), 'utf-8');
+      await updateLastSent(grupoIdAtivar, horarioAtualCorrigido);
 
       await client.sendMessage(grupoIdAtivar, `✅ Notificações ${ativarNotificacoes ? 'ativadas' : 'desativadas'} para este grupo.\nUse o comando ${prefixo}addhorapg 5m para adicionar o intervalo de tempo que cada horario será enviado.`);
       break;
@@ -2864,24 +2840,7 @@ client.on('message', async (message) => {
 
       const grupoIdHorarios = message.from;
 
-      const caminhoArquivoHorarios = './db/bet/horarios.json';
-      if (!fs.existsSync(caminhoArquivoHorarios)) {
-        console.error("Arquivo de horários não encontrado.");
-        return;
-      }
-
-      let dadosHorariosGrupos = JSON.parse(fs.readFileSync(caminhoArquivoHorarios, "utf-8"));
-      if (!dadosHorariosGrupos[grupoIdHorarios]) {
-        dadosHorariosGrupos[grupoIdHorarios] = {
-          intervalo: null,
-          ultimaNotificacao: null,
-          ativado: true
-        };
-      }
-
-      dadosHorariosGrupos[grupoIdHorarios].intervalo = intervaloArgumento;
-
-      fs.writeFileSync(caminhoArquivoHorarios, JSON.stringify(dadosHorariosGrupos, null, 2), 'utf-8');
+      await storeHorapg(grupoIdHorarios, { intervalo: intervaloArgumento });
 
       await client.sendMessage(grupoIdHorarios, `✅ Intervalo de notificações ajustado para ${intervaloArgumento}. Para ativar ou desativar as notificações automáticas, use ${prefixo}horapg`);
       break;

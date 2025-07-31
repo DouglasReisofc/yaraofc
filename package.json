@@ -27,8 +27,6 @@
     "mongodb": "^6.13.1",
     "mongoose": "^8.10.1",
     "node-fetch": "^2.6.7",
-    "node-telegram-api": "^0.4.0",
-    "node-telegram-bot-api": "^0.66.0",
     "os": "^0.1.1",
     "ping": "^0.4.4",
     "puppeteer": "^23.10.1",

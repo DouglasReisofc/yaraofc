@@ -11,6 +11,49 @@ const { youtube } = require("btch-downloader");
 const { exec } = require('child_process');
 const config = require('../dono/config.json');
 
+const searchYTFromApi = async (query) => {
+    try {
+        const baseUrl = config.botadminapi;
+        const apiKey = config.botadminapikey;
+        const url = `${baseUrl}/api/download/ytsearch?apikey=${apiKey}&nome=${encodeURIComponent(query)}`;
+
+        const response = await axios.get(url);
+        const data = response.data || {};
+        return data.resultados || data.result || data.results || [];
+    } catch (err) {
+        console.error(`Erro ao consultar ytsearch: ${err.message}`);
+        return [];
+    }
+};
+
+const downloadFromApi = async (query, chatId) => {
+    try {
+        const chat = await client.getChatById(chatId);
+        chat.sendStateTyping();
+
+        const results = await searchYTFromApi(query);
+
+        if (Array.isArray(results) && results.length > 0) {
+            const first = results[0];
+            const mediaUrl = first.audio || first.url || first.link;
+
+            if (mediaUrl) {
+                const media = await MessageMedia.fromUrl(mediaUrl);
+                await client.sendMessage(chatId, media, { caption: first.title || '' });
+            } else if (first.title && first.url) {
+                await client.sendMessage(chatId, `${first.title}\n${first.url}`);
+            } else {
+                await client.sendMessage(chatId, '❌ Não foi possível encontrar o áudio.');
+            }
+        } else {
+            await client.sendMessage(chatId, '❌ Nenhum resultado encontrado.');
+        }
+    } catch (error) {
+        console.error(`Erro ao usar API de download: ${error.message}`);
+        await client.sendMessage(chatId, '❌ Erro ao usar a API de download.');
+    }
+};
+
 // Pasta temporária para salvar arquivos
 const tmpFolder = './tmp';
 
@@ -328,4 +371,5 @@ module.exports = {
     processKwaiMedia,
     downloadVideoFromYouTube,
     downloadAudioFromYouTube,
+    downloadFromApi,
 };

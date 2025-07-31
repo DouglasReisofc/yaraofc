@@ -1,15 +1,26 @@
 const { MessageMedia } = require('whatsapp-web.js');
 const axios = require('axios');
 const moment = require('moment-timezone');
+const chalk = require('chalk');
 
 // Inicialização do cliente WhatsApp
 const client = require('../client.js');
 const config = require('../dono/config.json');
 
 const numerobot = config.numeroBot;
+const siteapi = config.siteapi;
 
 // Definição do fuso horário
 const TIMEZONE = "America/Sao_Paulo";
+
+function formatBox(title, lines) {
+    const width = Math.max(...lines.map(l => l.length));
+    console.log(chalk.blueBright('┌' + '─'.repeat(width + 2) + '┐'));
+    console.log(chalk.blueBright('│ ' + title.padEnd(width) + ' │'));
+    console.log(chalk.blueBright('├' + '─'.repeat(width + 2) + '┤'));
+    lines.forEach(l => console.log(chalk.yellowBright('│ ' + l.padEnd(width) + ' │')));
+    console.log(chalk.blueBright('└' + '─'.repeat(width + 2) + '┘'));
+}
 
 // Flag para evitar execuções concorrentes
 let isProcessing = false;
@@ -39,7 +50,7 @@ function parseInterval(intervalStr) {
 // Função para atualizar 'last_sent_at' na API
 async function updateAdLastSentAtInAPI(adId, lastSentAt) {
     try {
-        await axios.put(`https://bottechwpp.com/ads/${adId}/update-last-sent`, {
+        await axios.put(`${siteapi}/ads/${adId}/update-last-sent`, {
             last_sent_at: lastSentAt
         });
         //console.log(`[${moment().tz(TIMEZONE).format()}] 'last_sent_at' atualizado na API para o anúncio ID ${adId}.`);
@@ -80,7 +91,7 @@ function canSendAd(ad) {
 // Busca os anúncios diretamente da API principal
 async function fetchAdsFromAPI() {
     try {
-        const response = await axios.get(`https://bottechwpp.com/ads/bot/${numerobot}`);
+        const response = await axios.get(`${siteapi}/ads/bot/${numerobot}`);
         if (response.data && Array.isArray(response.data.ads)) {
             return response.data.ads;
         }
@@ -113,6 +124,11 @@ async function sendAdToGroup(ad) {
             await client.sendMessage(ad.group_identifier, ad.message);
         }
 
+        formatBox('ANÚNCIO ENVIADO', [
+            `Grupo: ${ad.group_identifier}`,
+            `ID: ${ad.id}`
+        ]);
+
         // Atualiza 'last_sent_at' na API
         const now = moment().tz(TIMEZONE).toISOString();
         await updateAdLastSentAtInAPI(ad.id, now);
@@ -125,28 +141,36 @@ async function sendAdToGroup(ad) {
 async function processAds() {
     const ads = await fetchAdsFromAPI();
 
+    formatBox('VERIFICAÇÃO DE ADS', [
+        `Anúncios encontrados: ${Array.isArray(ads) ? ads.length : 0}`
+    ]);
+
     if (!Array.isArray(ads) || ads.length === 0) {
         return;
     }
 
     for (let ad of ads) {
-        if (!ad.id || !ad.group_identifier || !ad.interval || !ad.message) {
-            continue;
-        }
-
-        const eligibility = canSendAd(ad);
-        if (!eligibility.eligible) {
-            continue;
-        }
-
-        // Verifica se o bot ainda está no grupo
         try {
-            await client.getChatById(ad.group_identifier);
-        } catch (err) {
+            if (!ad.id || !ad.group_identifier || !ad.interval || !ad.message) {
+                continue;
+            }
+
+            const eligibility = canSendAd(ad);
+            if (!eligibility.eligible) {
+                continue;
+            }
+
+            try {
+                await client.getChatById(ad.group_identifier);
+            } catch {
+                continue;
+            }
+
+            await sendAdToGroup(ad);
+        } catch {
+            // erro silencioso por anúncio
             continue;
         }
-
-        await sendAdToGroup(ad);
     }
 }
 
@@ -158,6 +182,10 @@ async function startAdProcessing() {
     }
 
     isProcessing = true;
+
+    formatBox('PROCESSO DE ADS', [
+        `Horário: ${moment().tz(TIMEZONE).format('DD/MM HH:mm:ss')}`
+    ]);
 
     try {
         await processAds();

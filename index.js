@@ -11,8 +11,8 @@ const FormData = require('form-data');
 const chalk = require('chalk');
 const moment = require('moment-timezone');
 const config = require('./dono/config.json');
-const { obterHorarioAtual, buscarHorarios, verificarHorariosEEnviarMensagens } = require('./func/bet.js');
-const { processTikTokMedia, processKwaiMedia, downloadVideoFromYouTube, downloadAudioFromYouTube } = require('./func/downloader.js');
+const { obterHorarioAtual, buscarHorarios, verificarHorariosEEnviarMensagens, storeHorapg, updateLastSent, deleteHorapg, getHorapg } = require('./func/bet.js');
+const { processTikTokMedia, processKwaiMedia, downloadVideoFromYouTube, downloadFromApi } = require('./func/downloader.js');
 const os = require('os');
 const ping = require('ping');
 const ffmpeg = require('fluent-ffmpeg');
@@ -114,11 +114,6 @@ const {
   abrirConversa,
   getQuotedMessageSafe
 } = require('./func/funcoes.js');
-const {
-  criarMetadadoGrupo,
-  atualizarMembrosGrupo,
-  consultarMetadadoGrupo
-} = require('./func/metadados.js');
 const textos = require('./db/textos/global.json');
 const {
   criarSorteio,
@@ -128,7 +123,8 @@ const {
   verificarSorteioAtivo,
   carregarSorteios,
   verificarSorteiosAtivos,
-  iniciarVerificacaoSorteiosAtivos
+  iniciarVerificacaoSorteiosAtivos,
+  obterIdCompleto
 } = require('./func/sorteio.js');
 
 const mimeTypes = [
@@ -571,7 +567,7 @@ client.on('message', async (message) => {
 
     try {
       console.log(`Buscando ID interno para o grupo: ${gus}`);
-      const response = await axios.get(`https://bottechwpp.com/api/obter-id/${gus}`);
+      const response = await axios.get(`${siteapi}/api/obter-id/${gus}`);
 
       if (response.status === 200 && response.data.id) {
         console.log(`ID interno encontrado: ${response.data.id}`);
@@ -592,7 +588,7 @@ client.on('message', async (message) => {
     try {
       console.log(`🔎 Buscando mensagem para o grupo: ${grupoId}`);
 
-      const response = await axios.get(`https://bottechwpp.com/api/tabela/${grupoId}`, {
+      const response = await axios.get(`${siteapi}/api/tabela/${grupoId}`, {
         headers: {
           'Accept': 'application/json'
         }
@@ -625,7 +621,7 @@ client.on('message', async (message) => {
         return `⚠️ Sua mensagem ultrapassa o limite de ${limiteCaracteres} caracteres! ✂️\n\n📏 Tente reduzir o tamanho.`;
       }
 
-      const response = await axios.post('https://bottechwpp.com/api/tabela', {
+      const response = await axios.post(`${siteapi}/api/tabela`, {
         group_id: grupoId, // Agora está correto
         mensagem_tabela: novaMensagem
       });
@@ -835,7 +831,7 @@ client.on('message', async (message) => {
         return;
       }
       try {
-        const iddogrupo = from; const response = await axios.get(`https://bottechwpp.com/ads/${iddogrupo}`);
+        const iddogrupo = from; const response = await axios.get(`${siteapi}/ads/${iddogrupo}`);
 
         const ads = response.data.ads;
         if (ads && ads.length > 0) {
@@ -887,7 +883,7 @@ client.on('message', async (message) => {
 
       const adId = args[1];
       try {
-        const response = await axios.get(`https://bottechwpp.com/ads/${from}`);
+        const response = await axios.get(`${siteapi}/ads/${from}`);
 
         if (response.status === 200) {
           const groupId = response.data.group_id;
@@ -895,7 +891,7 @@ client.on('message', async (message) => {
 
           if (ad) {
             if (groupId === from) {
-              const deleteResponse = await axios.get(`https://bottechwpp.com/ads/delete/${adId}`);
+              const deleteResponse = await axios.get(`${siteapi}/ads/delete/${adId}`);
 
               if (deleteResponse.status === 200) {
                 await client.sendMessage(from, `Anúncio com ID ${adId} excluído com sucesso.`);
@@ -1569,8 +1565,6 @@ client.on('message', async (message) => {
         return;
       }
 
-      const sorteio = criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes);
-
       const pollOptions = ["Participar ❤️", "Não Participar 😬"];
 
       if (chat.isGroup) {
@@ -1578,55 +1572,174 @@ client.on('message', async (message) => {
         const poll = new Poll(tituloSorteio, pollOptions, { allowMultipleAnswers: false });
         const pollMessage = await client.sendMessage(from, poll);
         await abrirConversa(from);
-        let pollId = pollMessage && pollMessage.id ? pollMessage.id._serialized : null;
+
+        let pollId = pollMessage?.id?._serialized || obterIdCompleto(pollMessage);
+
+        // Garante que o ID final da enquete foi obtido corretamente
         if (!pollId) {
           try {
-            const msgs = await chat.fetchMessages({ limit: 1 });
-            if (msgs && msgs.length > 0) {
-              pollId = msgs[0].id._serialized;
+            await new Promise(res => setTimeout(res, 1000));
+            const msgs = await chat.fetchMessages({ limit: 5 });
+            const pollMsg = msgs.find(m => m.type === 'poll_creation' && m.fromMe);
+            if (pollMsg) {
+              pollId = obterIdCompleto(pollMsg);
             }
           } catch (err) {
-            console.error('Erro ao obter ID da enquete:', err);
+            console.error('Erro ao buscar ID da enquete:', err);
           }
         }
+
+        if (!pollId) {
+          console.error('Não foi possível recuperar o ID da enquete. Sorteio não criado.');
+          await client.sendMessage(from, 'Erro ao criar sorteio. Tente novamente.');
+          return;
+        }
+
         logPollEvent(pollId, chat.name);
-        sorteio.idMensagem = pollId;
         criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollId);
-
-        setTimeout(async () => {
-          const sorteioAtual = carregarSorteios().find(s => s.idMensagem === pollId);
-
-        }, duracaoSorteio * 1000);
       }
       break;
 
 
     case 'sorteio2':
-      if (!isGroup) {
-        await client.sendMessage(from, msgsogrupo); return;
-      }
-
-      if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
-        await client.sendMessage(from, modosoadm); return;
-      }
-
-      if (!(isDono || isGroupAdmins)) {
-        await client.sendMessage(from, msgadmin); return;
-      }
-
-      const participants = chat.participants;
-
-      if (participants.length === 0) {
-        await client.sendMessage(from, "Este grupo não tem participantes!");
+      if (!aluguelStatus.ativo) {
+        await client.sendMessage(from, msgaluguel);
         return;
       }
 
-      const vencedor = participants[Math.floor(Math.random() * participants.length)];
+      if (!isGroup) {
+        await client.sendMessage(from, msgsogrupo);
+        return;
+      }
 
-      const mentionIds = [vencedor.id._serialized];
-      const mensagemSorteio = `🎉 O sorteio foi realizado! 🎉\n\n🏆 *Vencedor:* @${vencedor.id.user} 🏆\n\nParabéns!`;
+      if ((isSoadm === '1' || isSoadm === 1) && !isGroupAdmins && !isDono) {
+        await client.sendMessage(from, modosoadm);
+        return;
+      }
 
-      await client.sendMessage(from, mensagemSorteio, { mentions: mentionIds });
+      if (!(isDono || isGroupAdmins)) {
+        await client.sendMessage(from, msgadmin);
+        return;
+      }
+
+      if (args.length === 1) {
+        await client.sendMessage(
+          from,
+          "Para utilizar o comando !sorteio2, você deve especificar a descrição, o tempo de duração, o número de ganhadores e, opcionalmente, o número de participantes. Exemplo:\n\n!sorteio2 <Descrição> | <Duração> | <Número de Ganhadores> | <Limite de Participantes>\n\nExemplo: !sorteio2 'Sorteio de 10 Casas de Luxo' | 10m | 1 | 50\n\nOnde:\n- <Descrição>: Título ou descrição do sorteio.\n- <Duração>: Tempo de duração do sorteio (ex: 10s para 10 segundos, 5m para 5 minutos, 1h para 1 hora).\n- <Número de Ganhadores>: Quantos ganhadores o sorteio terá (opcional, padrão é 1).\n- <Limite de Participantes>: Limite de participantes (opcional, padrão é 0, sem limite)."
+        );
+        return;
+      }
+
+      const sorteioArgs2 = args.slice(1).join(' ').trim().split('|');
+      if (sorteioArgs2.length < 2) {
+        await client.sendMessage(
+          from,
+          "Para utilizar o comando !sorteio2, você deve especificar a descrição, o tempo de duração, o número de ganhadores e, opcionalmente, o número de participantes. Exemplo:\n\n!sorteio2 <Descrição> | <Duração> | <Número de Ganhadores> | <Limite de Participantes>\n\nExemplo: !sorteio2 'Sorteio de 10 Casas de Luxo' | 10m | 1 | 50"
+        );
+        return;
+      }
+
+      const tituloSorteio2 = sorteioArgs2[0].trim();
+      const duracaoStr2 = sorteioArgs2[1].trim();
+      const numGanhadores2 = sorteioArgs2[2] ? parseInt(sorteioArgs2[2].trim(), 10) : 1;
+      const limiteParticipantes2 = sorteioArgs2[3] ? parseInt(sorteioArgs2[3].trim(), 10) : 0;
+
+      const converterDuracao2 = (duracao) => {
+        const regex = /(\d+)([smh])/;
+        const match = duracao.match(regex);
+        if (!match) return 0;
+
+        const quantidade = parseInt(match[1], 10);
+        const unidade = match[2];
+
+        switch (unidade) {
+          case 's':
+            return quantidade;
+          case 'm':
+            return quantidade * 60;
+          case 'h':
+            return quantidade * 60 * 60;
+          default:
+            return 0;
+        }
+      };
+
+      const duracaoSorteio2 = converterDuracao2(duracaoStr2);
+      if (duracaoSorteio2 <= 0) {
+        await client.sendMessage(
+          from,
+          "A duração fornecida não é válida. Use o formato: <Número><s/m/h>, por exemplo: 10s para 10 segundos, 5m para 5 minutos ou 1h para 1 hora."
+        );
+        return;
+      }
+
+      const sorteioAtivo2 = await verificarSorteioAtivo(from);
+      if (sorteioAtivo2) {
+        await client.sendMessage(from, "Já existe um sorteio ativo neste grupo. Aguarde a finalização do sorteio atual.");
+        return;
+      }
+
+      if (chat.isGroup) {
+        await abrirConversa(from);
+
+        const textoSorteio =
+          `🎉 *${tituloSorteio2}* 🎉\n\nReaja a esta mensagem com qualquer emoji para participar do sorteio.`;
+
+        let resolverId;
+        const idPromise = new Promise((resolve) => {
+          resolverId = resolve;
+          const handler = (msg) => {
+            if (msg.fromMe && msg.to === from && msg.body === textoSorteio) {
+              client.off('message_create', handler);
+              resolve(obterIdCompleto(msg));
+            }
+          };
+          client.on('message_create', handler);
+          setTimeout(() => {
+            client.off('message_create', handler);
+            resolve(null);
+          }, 4000);
+        });
+
+        const mensagem = await client.sendMessage(from, textoSorteio);
+
+        let msgId = await idPromise;
+        if (!msgId) {
+          msgId = obterIdCompleto(mensagem);
+        }
+
+        // Garante que o ID final da mensagem enviada foi obtido
+        if (!msgId) {
+          try {
+            await new Promise(res => setTimeout(res, 1000));
+            const msgs = await chat.fetchMessages({ limit: 5 });
+            const msg = msgs.find(
+              (m) => m.fromMe && m.body && m.body.includes(tituloSorteio2)
+            );
+            if (msg) {
+              msgId = obterIdCompleto(msg);
+            }
+          } catch (err) {
+            console.error('Erro ao obter ID da mensagem do sorteio2:', err);
+          }
+        }
+
+        if (!msgId) {
+          console.error('Não foi possível recuperar o ID da mensagem do sorteio2.');
+          await client.sendMessage(from, 'Erro ao criar sorteio. Tente novamente.');
+          return;
+        }
+
+        criarSorteio(
+          from,
+          tituloSorteio2,
+          duracaoSorteio2,
+          numGanhadores2,
+          limiteParticipantes2,
+          msgId
+        );
+
+      }
 
       break;
 
@@ -1658,19 +1771,8 @@ client.on('message', async (message) => {
         return;
       }
 
-      const videoRequest = args.slice(1).join(' ').trim();
-
-      const isValidUrl = (str) => {
-        const regex = /(https?:\/\/[^\s]+)/g;
-        return regex.test(str);
-      };
-
-      const videoTitle = videoRequest;
-      if (isValidUrl(videoTitle)) {
-        await downloadAudioFromYouTube(videoTitle, from);
-      } else {
-        await downloadAudioFromYouTube(videoTitle, from);
-      }
+      const query = args.slice(1).join(' ').trim();
+      await downloadFromApi(query, from);
       break;
 
     case 'ytmp4':
@@ -1953,36 +2055,18 @@ client.on('message', async (message) => {
         }
 
         const groupId = chat.id._serialized;
-        const groupName = chat.name;
-        const groupAdmins = chat.groupMetadata
-          ? chat.groupMetadata.participants.filter(p => p.isAdmin).map(admin => admin.id._serialized)
-          : [];
-        const groupMembers = chat.participants.map(participant => participant.id._serialized);
+        const groupMembers = chat.participants.map(p => p.id._serialized);
 
-        const metadadoExistente = consultarMetadadoGrupo(groupId);
-        if (metadadoExistente) {
-          await atualizarMembrosGrupo(groupId, groupMembers, groupAdmins);
-        } else {
-          await criarMetadadoGrupo(groupId, groupName, groupMembers, groupAdmins);
-        }
-
-        const membersData = consultarMetadadoGrupo(groupId);
-        if (!membersData || !membersData.membros) {
-          console.error('Não foi possível recuperar os membros armazenados.');
-          await client.sendMessage(from, 'Erro ao recuperar os membros do grupo.');
-          break;
-        }
-
-        const MAX_MENTIONS_PER_MESSAGE = 500; const totalMembros = membersData.membros.length;
+        const MAX_MENTIONS_PER_MESSAGE = 500;
         const chunks = [];
 
-        for (let i = 0; i < totalMembros; i += MAX_MENTIONS_PER_MESSAGE) {
-          chunks.push(membersData.membros.slice(i, i + MAX_MENTIONS_PER_MESSAGE));
+        for (let i = 0; i < groupMembers.length; i += MAX_MENTIONS_PER_MESSAGE) {
+          chunks.push(groupMembers.slice(i, i + MAX_MENTIONS_PER_MESSAGE));
         }
 
         for (const chunk of chunks) {
           const mentionText = chunk.map(id => `@${id.split('@')[0]}`).join(' ');
-          const mentions = chunk.map(id => id);
+          const mentions = chunk;
 
           console.log(`Enviando ${mentions.length} menções: ${mentionText}`);
 
@@ -2475,7 +2559,7 @@ client.on('message', async (message) => {
             console.log(`Arquivo salvo em: ${filePath}`);
 
             const formData = new FormData();
-            formData.append('file', fs.createReadStream(filePath)); const response = await axios.post('https://bottechwpp.com/arq', formData, {
+            formData.append('file', fs.createReadStream(filePath)); const response = await axios.post(`${siteapi}/arq`, formData, {
               headers: formData.getHeaders(),
             });
 
@@ -2619,7 +2703,7 @@ client.on('message', async (message) => {
         }
 
         try {
-          const response = await axios.post(`https://bottechwpp.com/group/${message.from}/ads`, formData, {
+          const response = await axios.post(`${siteapi}/group/${message.from}/ads`, formData, {
             headers: formData.getHeaders(),
             validateStatus: function (status) {
               return status >= 200 && status < 500;
@@ -2692,39 +2776,26 @@ client.on('message', async (message) => {
 
       const ativarNotificacoes = args[1] === '1';
 
-
       const grupoIdAtivar = message.from;
 
-      const horariosPathAtivar = './db/bet/horarios.json';
+      if (ativarNotificacoes) {
+        const dadosAtuais = await getHorapg(grupoIdAtivar);
+        const intervalo = dadosAtuais?.intervalo_horapg || '5m';
 
-      if (!fs.existsSync(horariosPathAtivar)) {
-        console.error("Arquivo de horários não encontrado.");
-        return;
+        await storeHorapg(grupoIdAtivar, {
+          horapg: true,
+          intervalo_horapg: intervalo
+        });
+        await updateLastSent(grupoIdAtivar);
+      } else {
+        const dadosAtuais = await getHorapg(grupoIdAtivar);
+        const intervalo = dadosAtuais?.intervalo_horapg || '5m';
+
+        await storeHorapg(grupoIdAtivar, {
+          horapg: false,
+          intervalo_horapg: intervalo
+        });
       }
-
-
-      let horariosGruposAtivar = JSON.parse(fs.readFileSync(horariosPathAtivar, "utf-8"));
-
-
-      if (!horariosGruposAtivar[grupoIdAtivar]) {
-        horariosGruposAtivar[grupoIdAtivar] = {
-          horarios: [],
-          ultimaNotificacao: null,
-          ativado: true
-        };
-      }
-
-
-      horariosGruposAtivar[grupoIdAtivar].ativado = ativarNotificacoes;
-
-
-      const horarioAtualCorrigido = moment.tz('America/Sao_Paulo').subtract(2, 'hours').toISOString();
-
-
-      horariosGruposAtivar[grupoIdAtivar].ultimaNotificacao = horarioAtualCorrigido;
-
-
-      fs.writeFileSync(horariosPathAtivar, JSON.stringify(horariosGruposAtivar, null, 2), 'utf-8');
 
       await client.sendMessage(grupoIdAtivar, `✅ Notificações ${ativarNotificacoes ? 'ativadas' : 'desativadas'} para este grupo.\nUse o comando ${prefixo}addhorapg 5m para adicionar o intervalo de tempo que cada horario será enviado.`);
       break;
@@ -2757,24 +2828,12 @@ client.on('message', async (message) => {
 
       const grupoIdHorarios = message.from;
 
-      const caminhoArquivoHorarios = './db/bet/horarios.json';
-      if (!fs.existsSync(caminhoArquivoHorarios)) {
-        console.error("Arquivo de horários não encontrado.");
-        return;
-      }
+      const dadosAtuais = await getHorapg(grupoIdHorarios);
 
-      let dadosHorariosGrupos = JSON.parse(fs.readFileSync(caminhoArquivoHorarios, "utf-8"));
-      if (!dadosHorariosGrupos[grupoIdHorarios]) {
-        dadosHorariosGrupos[grupoIdHorarios] = {
-          intervalo: null,
-          ultimaNotificacao: null,
-          ativado: true
-        };
-      }
-
-      dadosHorariosGrupos[grupoIdHorarios].intervalo = intervaloArgumento;
-
-      fs.writeFileSync(caminhoArquivoHorarios, JSON.stringify(dadosHorariosGrupos, null, 2), 'utf-8');
+      await storeHorapg(grupoIdHorarios, {
+        horapg: dadosAtuais?.horapg || false,
+        intervalo_horapg: intervaloArgumento
+      });
 
       await client.sendMessage(grupoIdHorarios, `✅ Intervalo de notificações ajustado para ${intervaloArgumento}. Para ativar ou desativar as notificações automáticas, use ${prefixo}horapg`);
       break;
@@ -2803,14 +2862,18 @@ client.on('message', async (message) => {
 
       const horarios = buscarHorarios(horarioAtual);
 
-      const imagensConfig = require('./db/bet/imagens.json');
-
       const groupJid = message.from;
+      const dadosHorapg = await getHorapg(groupJid);
 
-      const imagemUrl = imagensConfig[groupJid] ? imagensConfig[groupJid].imagem : imagensConfig.default.imagem;
+      const defaultImage =
+        'https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg';
+
+      let imagemUrl = defaultImage;
+      if (dadosHorapg && dadosHorapg.imagem_horapg) {
+        imagemUrl = dadosHorapg.imagem_horapg;
+      }
 
       try {
-
         const media = await MessageMedia.fromUrl(imagemUrl);
 
         if (horarios) {
@@ -2821,7 +2884,18 @@ client.on('message', async (message) => {
           await client.sendMessage(message.from, "❗️ Não há horários configurados no momento.");
         }
       } catch (err) {
-        await client.sendMessage(from, `❌ Erro ao enviar a mídia: ${err.message}`);
+        if (imagemUrl !== defaultImage) {
+          try {
+            const media = await MessageMedia.fromUrl(defaultImage);
+            await client.sendMessage(message.from, media, {
+              caption: `Horário Atual: ${horarioAtual}\n\n${horarios || ''}`
+            });
+          } catch (fallbackErr) {
+            await client.sendMessage(from, `❌ Erro ao enviar a mídia: ${fallbackErr.message}`);
+          }
+        } else {
+          await client.sendMessage(from, `❌ Erro ao enviar a mídia: ${err.message}`);
+        }
       }
       break;
 
@@ -2845,27 +2919,26 @@ client.on('message', async (message) => {
       }
 
       try {
-        const fileLink = await upload(imageHorarios);
-        const jsonFilePath = './db/bet/imagens.json';
-        let imagensConfig = {};
-
-        if (fs.existsSync(jsonFilePath)) {
-          imagensConfig = JSON.parse(fs.readFileSync(jsonFilePath, 'utf8'));
-        } else {
-          imagensConfig = {
-            "default": {
-              "imagem": "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg"
-            }
-          };
-          fs.writeFileSync(jsonFilePath, JSON.stringify(imagensConfig, null, 2));
-        }
         const groupJid = message.from;
-        imagensConfig[groupJid] = { imagem: fileLink };
-        fs.writeFileSync(jsonFilePath, JSON.stringify(imagensConfig, null, 2));
-        const mediaMessage = await MessageMedia.fromUrl(fileLink);
-        await client.sendMessage(message.from, mediaMessage, {
-          caption: `Nova imagem do comando ${prefixo}horarios  foi definida`
+
+        const dadosAtuais = await getHorapg(groupJid);
+
+        const resultado = await storeHorapg(groupJid, {
+          horapg: dadosAtuais?.horapg || false,
+          intervalo_horapg: dadosAtuais?.intervalo_horapg || '5m',
+          imagem_horapg: imageHorarios
         });
+
+        const imagemFinal = resultado?.settings?.imagem_horapg;
+
+        if (imagemFinal) {
+          const mediaMessage = await MessageMedia.fromUrl(imagemFinal);
+          await client.sendMessage(message.from, mediaMessage, {
+            caption: `Nova imagem do comando ${prefixo}horarios  foi definida`
+          });
+        } else {
+          await client.sendMessage(from, 'Imagem atualizada com sucesso.');
+        }
 
       } catch (err) {
         await client.sendMessage(from, `❌ Erro ao fazer upload da imagem: ${err.message}`);
@@ -2949,7 +3022,7 @@ client.on('message', async (message) => {
       try {
         const groupId = message.from;
 
-        const apiUrl = `https://bottechwpp.com/groups/${groupId}?apikey=teste`;
+        const apiUrl = `${siteapi}/groups/${groupId}?apikey=${apikeysite}`;
 
         const axios = require('axios');
         const response = await axios.get(apiUrl);
@@ -3605,9 +3678,9 @@ ${mensagemGostoso}`);
         return;
       }
       try {
-        const apiKey = 'xxx';
+        const apiKey = config.groqApiKey;
 
-        const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        const apiUrl = config.groqApiUrl;
 
         const requestBody = {
           model: 'llama3-8b-8192', messages: [{
@@ -3650,9 +3723,9 @@ ${mensagemGostoso}`);
       }
 
       try {
-        const apiKey = 'xxxxx';
+        const apiKey = config.groqApiKey;
 
-        const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        const apiUrl = config.groqApiUrl;
 
         const requestBody = {
           model: 'llama3-8b-8192', messages: [{
@@ -3700,9 +3773,9 @@ ${mensagemGostoso}`);
       }
 
       try {
-        const apiKey = 'xxx';
+        const apiKey = config.groqApiKey;
 
-        const apiUrl = 'https://api.groq.com/openai/v1/chat/completions';
+        const apiUrl = config.groqApiUrl;
 
         const requestBody = {
           model: 'llama3-8b-8192', messages: [{
@@ -3913,29 +3986,6 @@ ${mensagemGostoso}`);
 
 
 
-    case 'telegram':
-      let media;
-      if (message.hasQuotedMsg) {
-        const quotedMsg = await getQuotedMessageSafe(message);
-        if (!quotedMsg.hasMedia) {
-          await client.sendMessage(from, "A mensagem citada não contém mídia.");
-          return;
-        }
-        media = await quotedMsg.downloadMedia();
-      } else if (message.hasMedia) {
-        media = await message.downloadMedia();
-      } else {
-        await client.sendMessage(from, "Responda a uma mensagem com mídia ou envie uma mídia para usar este comando.");
-        return;
-      }
-      try {
-        const fileLink = await upload(media);
-        const mediaMessage = await MessageMedia.fromUrl(fileLink);
-        await client.sendMessage(message.from, mediaMessage);
-      } catch (err) {
-        await client.sendMessage(from, `❌ Erro ao enviar mídia: ${err.message}`);
-      }
-      break;
 
 
 
@@ -3956,22 +4006,13 @@ ${mensagemGostoso}`);
 
       const chatDefault = await message.getChat();
       const nomeGrupoDefault = chatDefault.isGroup ? chatDefault.name : 'Não é um grupo';
-      const idGrupoDefault = chatDefault.isGroup ? chatDefault.id._serialized : 'Não é um grupo';
-
-      let idMensagem = 'Indisponível';
-      if (message.id) {
-        if (typeof message.id === 'object') {
-          idMensagem = message.id._serialized || message.id.id || idMensagem;
-        } else {
-          idMensagem = message.id;
-        }
-      }
+      const jidDestino = chatDefault.id._serialized;
 
       await client.sendMessage(from,
         `╭━━━[ *COMANDO INVALIDO* ]━━━╮
     |Data: *${dataFormatada}*
     |Grupo: *${nomeGrupoDefault}*
-    | ID:(${idMensagem})
+    | ID:(${jidDestino})
     |
     |*Número: ${author}*
     |        

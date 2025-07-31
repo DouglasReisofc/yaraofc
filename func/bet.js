@@ -1,8 +1,101 @@
+const axios = require("axios");
+const config = require("../dono/config.json");
 const moment = require('moment-timezone');
 const fs = require('fs');
 const client = require('../client.js');
 const path = require('path');
 const { MessageMedia } = require('whatsapp-web.js');
+const FormData = require('form-data');
+const chalk = require('chalk');
+
+const siteapi = config.siteapi;
+const numerobot = config.numeroBot;
+
+function formatBox(title, lines) {
+    const width = Math.max(...lines.map(l => l.length));
+    console.log(chalk.blueBright('┌' + '─'.repeat(width + 2) + '┐'));
+    console.log(chalk.blueBright('│ ' + title.padEnd(width) + ' │'));
+    console.log(chalk.blueBright('├' + '─'.repeat(width + 2) + '┤'));
+    lines.forEach(l => console.log(chalk.yellowBright('│ ' + l.padEnd(width) + ' │')));
+    console.log(chalk.blueBright('└' + '─'.repeat(width + 2) + '┘'));
+}
+
+async function fetchHorapgFromAPI() {
+    try {
+        const url = `${siteapi}/group/horapg`;
+        const response = await axios.get(url);
+        if (response.data && Array.isArray(response.data.data)) {
+            return response.data.data;
+        }
+    } catch (error) {
+        // erro silencioso
+    }
+    return [];
+}
+
+async function storeHorapg(groupJid, data = {}) {
+    try {
+        const encoded = encodeURIComponent(groupJid);
+
+        // Se imagem_horapg possuir dados de mídia, envia como multipart
+        if (data.imagem_horapg && data.imagem_horapg.data) {
+            const form = new FormData();
+            form.append('horapg', data.horapg);
+            form.append('intervalo_horapg', data.intervalo_horapg);
+
+            const buffer = Buffer.from(data.imagem_horapg.data, 'base64');
+            const ext = data.imagem_horapg.mimetype?.split('/')[1] || 'jpg';
+            form.append(
+                'imagem_horapg',
+                buffer,
+                { filename: `horapg.${ext}`, contentType: data.imagem_horapg.mimetype || 'image/jpeg' }
+            );
+
+            const res = await axios.post(`${siteapi}/group/${encoded}/horapg`, form, {
+                headers: form.getHeaders(),
+            });
+            return res.data;
+        } else {
+            const payload = { ...data };
+            delete payload.imagem_horapg;
+            const res = await axios.post(`${siteapi}/group/${encoded}/horapg`, payload);
+            return res.data;
+        }
+    } catch (err) {
+        return null;
+    }
+}
+
+async function updateLastSent(groupJid) {
+    try {
+        const encoded = encodeURIComponent(groupJid);
+        await axios.patch(`${siteapi}/group/${encoded}/horapg/last-sent`);
+    } catch (err) {
+        // erro silencioso
+    }
+}
+
+async function deleteHorapg(groupJid) {
+    try {
+        const encoded = encodeURIComponent(groupJid);
+        await axios.delete(`${siteapi}/group/${encoded}/horapg`);
+    } catch (err) {
+        // erro silencioso
+    }
+}
+
+async function getHorapg(groupJid) {
+    try {
+        const encoded = encodeURIComponent(groupJid);
+        const response = await axios.get(`${siteapi}/group/${encoded}/horapg`);
+        if (response.data && response.data.settings) {
+            return response.data.settings;
+        }
+    } catch (err) {
+        // erro silencioso
+    }
+    return null;
+}
 
 
 function obterHorarioAtual() {
@@ -104,84 +197,80 @@ function converterIntervaloParaMs(intervalo) {
 
 async function verificarHorariosEEnviarMensagens() {
     const timestampAtual = moment.tz('America/Sao_Paulo').valueOf();
-    const horariosPath = "./db/bet/horarios.json";
-    const imagensPath = "./db/bet/imagens.json";
+    const defaultImage = "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg";
 
-
-    if (!fs.existsSync(horariosPath)) {
-        return;
-    }
-    if (!fs.existsSync(imagensPath)) {
-        return;
-    }
-
-    let horariosGrupos, imagensConfig;
+    let registros = [];
     try {
-        horariosGrupos = JSON.parse(fs.readFileSync(horariosPath, "utf-8"));
-        imagensConfig = JSON.parse(fs.readFileSync(imagensPath, "utf-8"));
+        registros = await fetchHorapgFromAPI();
     } catch (err) {
-        return;
+        registros = [];
     }
 
-    let atualizado = false;
+    formatBox('VERIFICAÇÃO HORAPG', [
+        `Grupos recebidos: ${Array.isArray(registros) ? registros.length : 0}`
+    ]);
 
-    for (let grupoId in horariosGrupos) {
-        const grupo = horariosGrupos[grupoId];
+    for (const registro of registros) {
+        const grupoJid = registro.group_id;
+        if (!grupoJid) continue;
 
-        if (grupo.ativado && grupo.intervalo) {
-            const intervaloMs = converterIntervaloParaMs(grupo.intervalo);
-            if (intervaloMs === null) {
-                continue;
-            }
+        try {
+            await client.getChatById(grupoJid);
+        } catch {
+            continue;
+        }
 
-            const ultimaNotificacao = grupo.ultimaNotificacao
-                ? moment.tz(grupo.ultimaNotificacao, 'America/Sao_Paulo').valueOf()
-                : null;
+        try {
+            if ((registro.horapg === 1 || registro.horapg === '1') && registro.intervalo_horapg) {
+                const intervaloMs = converterIntervaloParaMs(registro.intervalo_horapg);
+                if (intervaloMs === null) continue;
 
-            if (!ultimaNotificacao || (timestampAtual - ultimaNotificacao) >= intervaloMs) {
-                const horarioAtual = obterHorarioAtual();
-                const mensagem = buscarHorarios(horarioAtual);
-
-
-                const imagemUrl = imagensConfig[grupoId]?.imagem
-                    || "https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg";
-
-                if (mensagem) {
-                    try {
-
-                        const media = await MessageMedia.fromUrl(imagemUrl);
-                        await client.sendMessage(grupoId, media, { caption: mensagem });
-                    } catch (err) {
-                        console.error(`Erro ao enviar imagem personalizada para grupo ${grupoId}: ${err.message}`);
-                        try {
-
-                            const media = await MessageMedia.fromUrl("https://raw.githubusercontent.com/DouglasReisofc/imagensplataformas/refs/heads/main/global.jpeg");
-                            await client.sendMessage(grupoId, media, { caption: mensagem });
-                        } catch (fallbackErr) {
-                            console.error(`Erro ao enviar imagem padrão: ${fallbackErr.message}`);
-                        }
-                    }
-                } else {
-                    try {
-                        await client.sendMessage(grupoId, "_❲❗❳   Desculpe, Sem Horário Atualmente_");
-                    } catch (err) {
-                        console.error(`Erro ao enviar mensagem de ausência de horários para grupo ${grupoId}: ${err.message}`);
-                    }
+                if (!registro.ultimo_envio_horapg) {
+                    await updateLastSent(grupoJid);
+                    continue;
                 }
 
-                grupo.ultimaNotificacao = moment.tz('America/Sao_Paulo').toISOString();
-                atualizado = true;
+                const ultimaNotificacao = registro.ultimo_envio_horapg
+                    ? moment.tz(registro.ultimo_envio_horapg, 'America/Sao_Paulo').valueOf()
+                    : null;
 
-                await sleep(2000);
+                if (!ultimaNotificacao || (timestampAtual - ultimaNotificacao) >= intervaloMs) {
+                    const horarioAtual = obterHorarioAtual();
+                    const mensagem = buscarHorarios(horarioAtual);
+
+                    const imagemUrl = registro.imagem_horapg || defaultImage;
+
+                    if (mensagem) {
+                        try {
+                            const media = await MessageMedia.fromUrl(imagemUrl);
+                            await client.sendMessage(grupoJid, media, { caption: mensagem });
+                            formatBox('HORAPG ENVIADO', [
+                                `Grupo: ${grupoJid}`,
+                                `Intervalo: ${registro.intervalo_horapg}`
+                            ]);
+                        } catch (err) {
+                            try {
+                                const media = await MessageMedia.fromUrl(defaultImage);
+                                await client.sendMessage(grupoJid, media, { caption: mensagem });
+                            } catch {
+                                // falha silenciosa
+                            }
+                        }
+                    } else {
+                        try {
+                            await client.sendMessage(grupoJid, "_❲❗❳   Desculpe, Sem Horário Atualmente_");
+                        } catch {
+                            // erro silencioso
+                        }
+                    }
+
+                    await updateLastSent(grupoJid);
+
+                    await sleep(2000);
+                }
             }
-        }
-    }
-
-    if (atualizado) {
-        try {
-            fs.writeFileSync(horariosPath, JSON.stringify(horariosGrupos, null, 2), "utf-8");
-        } catch (err) {
-            console.error(`Erro ao atualizar o arquivo de horários: ${err.message}`);
+        } catch {
+            // erro silencioso por grupo
         }
     }
 }
@@ -205,5 +294,10 @@ fs.watchFile(file, () => {
 module.exports = {
     obterHorarioAtual,
     buscarHorarios,
-    verificarHorariosEEnviarMensagens
+    verificarHorariosEEnviarMensagens,
+    fetchHorapgFromAPI,
+    storeHorapg,
+    updateLastSent,
+    deleteHorapg,
+    getHorapg
 };

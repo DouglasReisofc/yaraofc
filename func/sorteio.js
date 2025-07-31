@@ -58,7 +58,44 @@ function salvarSorteios(sorteios) {
 function extrairIdBasico(serializedId) {
   if (typeof serializedId !== 'string') return null;
   const partes = serializedId.split('_');
-  return partes.length >= 3 ? partes[2] : serializedId;
+  if (partes.length >= 3) {
+    return partes[2];
+  } else if (partes.length === 2) {
+    return partes[1];
+  }
+  return serializedId;
+}
+
+/**
+ * Obtém de forma resiliente o ID completo de uma mensagem retornada pela API.
+ * Alguns métodos podem não expor diretamente o campo `_serialized`.
+ * @param {object} msg Mensagem retornada pela API
+ * @returns {string|null} ID completo ou null
+ */
+function obterIdCompleto(msg) {
+  if (!msg) return null;
+
+  if (msg.id?._serialized) return msg.id._serialized;
+  if (msg._data?.id?._serialized) return msg._data.id._serialized;
+
+  const compose = (obj) => {
+    if (!obj) return null;
+    const { fromMe, remote, id, participant } = obj;
+    if (typeof fromMe !== 'undefined' && remote && id) {
+      return (
+        `${fromMe ? 'true' : 'false'}_${remote}_${id}` +
+        (participant ? `_${participant}` : '')
+      );
+    }
+    return obj.id || null;
+  };
+
+  return (
+    compose(msg.id) ||
+    compose(msg._data?.id) ||
+    compose(msg) ||
+    null
+  );
 }
 
 /**
@@ -82,7 +119,9 @@ function criarSorteio(idGrupo, titulo, duracao, ganhadores = 1, limite = 0, idMe
   let sorteioExistente = sorteios.find(s => s.idGrupo === idGrupo);
 
   if (sorteioExistente) {
-    sorteioExistente.idMensagem = idMensagem;
+    if (idMensagem) {
+      sorteioExistente.idMensagem = idMensagem;
+    }
     sorteioExistente.titulo = titulo;
     sorteioExistente.ganhadores = ganhadores;
     sorteioExistente.limite = limite;
@@ -269,20 +308,35 @@ async function iniciarVerificacaoSorteiosAtivos() {
           }
 
           // Envia a mensagem com menções
-          await client.sendMessage(sorteio.idGrupo, mensagemFinal, { mentions: mentionIds });
+          try {
+            await client.sendMessage(sorteio.idGrupo, mensagemFinal, { mentions: mentionIds });
+          } catch (error) {
+            console.error('Erro ao enviar mensagem final do sorteio com menções:', error);
+          }
         } else {
           // Mensagem personalizada quando não há vencedores devido à falta de participantes
           mensagemFinal = `乂 S O R T E I O   F I N A L I Z A D O 乂\n\nO sorteio "${sorteio.titulo}" foi finalizado, mas não houve vencedores, pois não havia participantes suficientes. 😔\n\nObrigado a todos que participaram! 🎁✨`;
-          await client.sendMessage(sorteio.idGrupo, mensagemFinal);
+          try {
+            await client.sendMessage(sorteio.idGrupo, mensagemFinal);
+          } catch (error) {
+            console.error('Erro ao enviar mensagem final do sorteio:', error);
+          }
         }
 
         // Exclui a enquete se o ID da mensagem for válido
         if (sorteio.idMensagem) {
           try {
-            const pollMessage = await client.getMessageById(sorteio.idMensagem);
+            let pollMessage = await client.getMessageById(sorteio.idMensagem);
+            if (!pollMessage) {
+              const chat = await client.getChatById(sorteio.idGrupo);
+              const msgs = await chat.fetchMessages({ limit: 50 });
+              pollMessage = msgs.find(m => obterIdCompleto(m) === sorteio.idMensagem);
+            }
             if (pollMessage) {
               await pollMessage.delete(true);
               console.log(`Enquete excluída com sucesso para o sorteio "${sorteio.titulo}".`);
+            } else {
+              console.log('Não foi possível localizar a enquete para exclusão.');
             }
           } catch (error) {
             console.error('Erro ao excluir a enquete:', error);
@@ -300,8 +354,7 @@ client.on('vote_update', async (vote) => {
   console.log('VOTE UPDATE RAW:', JSON.stringify(vote, null, 2));
 
   const parent = vote.parentMessage;
-  const pollSerialized =
-    parent?.id?._serialized || parent?._data?.id?._serialized || null;
+  const pollSerialized = obterIdCompleto(parent);
   const pollIdBase = extrairIdBasico(pollSerialized);
   const groupId = parent?.to || parent?._data?.to || null;
   const { voter, selectedOptions } = vote;
@@ -346,10 +399,55 @@ client.on('vote_update', async (vote) => {
   const sorteioAtual = await verificarSorteioAtivo(groupId);
   if (sorteioAtual && sorteioAtual.limite > 0 && sorteioAtual.participantes.length >= sorteioAtual.limite) {
     if (sorteioAtual.idMensagem) {
-      const pollMessage = await client.getMessageById(sorteioAtual.idMensagem);
+      let pollMessage = await client.getMessageById(sorteioAtual.idMensagem);
+      if (!pollMessage) {
+        const chat = await client.getChatById(groupId);
+        const msgs = await chat.fetchMessages({ limit: 50 });
+        pollMessage = msgs.find(m => obterIdCompleto(m) === sorteioAtual.idMensagem);
+      }
       if (pollMessage) {
         await pollMessage.delete(true);
-        await client.sendMessage(groupId, "O limite de participantes foi atingido. O sorteio está encerrado, aguardem o resultado.");
+        await client.sendMessage(groupId, 'O limite de participantes foi atingido. O sorteio está encerrado, aguardem o resultado.');
+      }
+    }
+  }
+});
+
+client.on('message_reaction', async (reaction) => {
+  console.log("Evento 'message_reaction' acionado!");
+  console.log('REACTION RAW:', JSON.stringify(reaction, null, 2));
+
+  const serialized = obterIdCompleto(reaction.msgId) || obterIdCompleto(reaction.id);
+  const messageId = extrairIdBasico(serialized);
+  const groupId = reaction.chatId || reaction.msgId?.remote || reaction.id?.remote || null;
+  const participante = reaction.senderId;
+
+  if (!messageId || !groupId || !participante) return;
+
+  const sorteioAtivo = await verificarSorteioAtivo(groupId);
+  const sorteioBaseId = extrairIdBasico(sorteioAtivo?.idMensagem);
+  if (!sorteioAtivo || messageId !== sorteioBaseId) return;
+
+  if (reaction.reaction) {
+    console.log(`Adicionando participante ${participante} ao sorteio ${groupId}`);
+    adicionarParticipante(groupId, participante);
+  } else {
+    console.log(`Removendo participante ${participante} do sorteio ${groupId}`);
+    removerParticipante(groupId, participante);
+  }
+
+  const atualizado = carregarSorteios().find(s => s.idGrupo === groupId);
+  if (atualizado) {
+    console.log('Participantes atuais:', atualizado.participantes.join(', '));
+  }
+
+  const sorteioAtual = await verificarSorteioAtivo(groupId);
+  if (sorteioAtual && sorteioAtual.limite > 0 && sorteioAtual.participantes.length >= sorteioAtual.limite) {
+    if (sorteioAtual.idMensagem) {
+      const msg = await client.getMessageById(sorteioAtual.idMensagem);
+      if (msg) {
+        await msg.delete(true);
+        await client.sendMessage(groupId, 'O limite de participantes foi atingido. O sorteio está encerrado, aguardem o resultado.');
       }
     }
   }
@@ -363,5 +461,6 @@ module.exports = {
   verificarSorteioAtivo,
   iniciarVerificacaoSorteiosAtivos,
   carregarSorteios,
-  extrairIdBasico
+  extrairIdBasico,
+  obterIdCompleto
 };

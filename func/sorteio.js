@@ -58,7 +58,12 @@ function salvarSorteios(sorteios) {
 function extrairIdBasico(serializedId) {
   if (typeof serializedId !== 'string') return null;
   const partes = serializedId.split('_');
-  return partes.length >= 3 ? partes[2] : serializedId;
+  if (partes.length >= 3) {
+    return partes[2];
+  } else if (partes.length === 2) {
+    return partes[1];
+  }
+  return serializedId;
 }
 
 /**

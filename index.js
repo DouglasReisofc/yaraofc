@@ -1576,20 +1576,28 @@ client.on('message', async (message) => {
         const poll = new Poll(tituloSorteio, pollOptions, { allowMultipleAnswers: false });
         const pollMessage = await client.sendMessage(from, poll);
         await abrirConversa(from);
+
         let pollId = pollMessage?.id?._serialized || null;
 
-        // Caso o ID não esteja imediatamente disponível, busca a mensagem de enquete
+        // Garante que o ID da enquete foi obtido corretamente
         if (!pollId) {
           try {
             const msgs = await chat.fetchMessages({ limit: 5 });
-            const pollMsg = msgs.find(m => m.type === 'poll_creation');
+            const pollMsg = msgs.find(m => m.type === 'poll_creation' && m.fromMe);
             if (pollMsg) {
               pollId = pollMsg.id._serialized;
             }
           } catch (err) {
-            console.error('Erro ao obter ID da enquete:', err);
+            console.error('Erro ao buscar ID da enquete:', err);
           }
         }
+
+        if (!pollId) {
+          console.error('Não foi possível recuperar o ID da enquete. Sorteio não criado.');
+          await client.sendMessage(from, 'Erro ao criar sorteio. Tente novamente.');
+          return;
+        }
+
         logPollEvent(pollId, chat.name);
         criarSorteio(from, tituloSorteio, duracaoSorteio, numGanhadores, limiteParticipantes, pollId);
 
@@ -1700,6 +1708,12 @@ client.on('message', async (message) => {
           } catch (err) {
             console.error('Erro ao obter ID da mensagem do sorteio2:', err);
           }
+        }
+
+        if (!msgId) {
+          console.error('Não foi possível recuperar o ID da mensagem do sorteio2.');
+          await client.sendMessage(from, 'Erro ao criar sorteio. Tente novamente.');
+          return;
         }
 
         criarSorteio(

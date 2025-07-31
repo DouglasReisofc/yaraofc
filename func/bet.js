@@ -200,6 +200,11 @@ async function verificarHorariosEEnviarMensagens() {
             const intervaloMs = converterIntervaloParaMs(registro.intervalo_horapg);
             if (intervaloMs === null) continue;
 
+            if (!registro.ultimo_envio_horapg) {
+                await updateLastSent(grupoJid);
+                continue;
+            }
+
             const ultimaNotificacao = registro.ultimo_envio_horapg
                 ? moment.tz(registro.ultimo_envio_horapg, 'America/Sao_Paulo').valueOf()
                 : null;

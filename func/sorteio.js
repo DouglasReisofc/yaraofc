@@ -74,13 +74,23 @@ function extrairIdBasico(serializedId) {
  */
 function obterIdCompleto(msg) {
   if (!msg) return null;
-  return (
-    msg.id?._serialized ||
-    msg.id?.id ||
-    msg._data?.id?._serialized ||
-    msg._data?.id?.id ||
-    null
-  );
+
+  if (msg.id?._serialized) return msg.id._serialized;
+  if (msg._data?.id?._serialized) return msg._data.id._serialized;
+
+  const compose = (obj) => {
+    if (!obj) return null;
+    const { fromMe, remote, id, participant } = obj;
+    if (typeof fromMe !== 'undefined' && remote && id) {
+      return (
+        `${fromMe ? 'true' : 'false'}_${remote}_${id}` +
+        (participant ? `_${participant}` : '')
+      );
+    }
+    return obj.id || null;
+  };
+
+  return compose(msg.id) || compose(msg._data?.id) || null;
 }
 
 /**

@@ -1689,7 +1689,7 @@ client.on('message', async (message) => {
           from,
           `🎉 *${tituloSorteio2}* 🎉\n\nReaja a esta mensagem com qualquer emoji para participar do sorteio.`
         );
-        let msgId = mensagem?.id?._serialized || obterIdCompleto(mensagem);
+        let msgId = obterIdCompleto(mensagem);
 
         // Garante que o ID da mensagem enviada foi obtido
         if (!msgId) {

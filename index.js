@@ -140,15 +140,16 @@ async function realizarSorteioRapido(from, chat, titulo) {
 
   const sorteado = participantes[Math.floor(Math.random() * participantes.length)];
   const vencedorId = sorteado.id._serialized;
-  const prefixoTitulo = titulo
-    ? `🎉 *${titulo}* 🎉\n\n`
-    : '🎉 Sorteio rápido 🎉\n\n';
 
-  await client.sendMessage(
-    from,
-    `${prefixoTitulo}Parabéns @${sorteado.id.user}!`,
-    { mentions: [vencedorId] }
-  );
+  let mensagemFinal =
+    '🎉 S O R T E I O   F I N A L I Z A D O 🎉\n\nParabéns!\n🏆 *Vencedor:* \n';
+  mensagemFinal += `@${sorteado.id.user} 🏆\n\n`;
+  if (titulo) {
+    mensagemFinal += `Descrição: \n*\"${titulo}\"*\n\n`;
+  }
+  mensagemFinal += 'Obrigado a todos que participaram! 🎁✨';
+
+  await client.sendMessage(from, mensagemFinal, { mentions: [vencedorId] });
 }
 
 const mimeTypes = [
